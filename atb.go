@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 )
 
@@ -31,15 +32,21 @@ func (a *Atb) post(m Method, data interface{}) ([]byte, error) {
 	return jsonResponse, nil
 }
 
-func (a *Atb) GetBusStops() ([]byte, error) {
-	data := struct {
+func (a *Atb) GetBusStops() (BusStops, error) {
+	values := struct {
 		Username string
 		Password string
 	}{a.Username, a.Password}
 	method := a.Methods.GetBusStopsList
-	json, err := a.post(method, data)
+
+	jsonBlob, err := a.post(method, values)
 	if err != nil {
-		return nil, err
+		return BusStops{}, err
 	}
-	return json, nil
+
+	var stops busStops
+	if err := json.Unmarshal(jsonBlob, &stops); err != nil {
+		return BusStops{}, err
+	}
+	return stops.Convert()
 }

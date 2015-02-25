@@ -30,7 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	a, err := ReadConfig(opts.Config)
+	atb, err := ReadConfig(opts.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,9 +38,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a.Methods = methods
-	_, err = a.GetBusStops()
-	if err != nil {
-		log.Fatal(err)
-	}
+	atb.Methods = methods
 }
