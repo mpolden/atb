@@ -7,12 +7,12 @@ import (
 	"net/http"
 )
 
-const URL = "http://st.atb.no/InfoTransit/userservices.asmx"
+const DefaultURL = "http://st.atb.no/InfoTransit/userservices.asmx"
 
 type Client struct {
 	Username string
 	Password string
-	methods  Methods
+	URL      string
 }
 
 type BusStops struct {
@@ -64,7 +64,9 @@ func NewFromConfig(name string) (Client, error) {
 	if err := json.Unmarshal(data, &client); err != nil {
 		return Client{}, err
 	}
-	client.methods = newMethods()
+	if client.URL == "" {
+		client.URL = DefaultURL
+	}
 	return client, nil
 }
 
@@ -74,7 +76,7 @@ func (c *Client) post(m Method, data interface{}) ([]byte, error) {
 		return nil, err
 	}
 	buf := bytes.NewBufferString(req)
-	resp, err := http.Post(URL, "application/soap+xml", buf)
+	resp, err := http.Post(c.URL, "application/soap+xml", buf)
 	if err != nil {
 		return nil, err
 	}
@@ -95,9 +97,8 @@ func (c *Client) GetBusStops() (BusStops, error) {
 		Username string
 		Password string
 	}{c.Username, c.Password}
-	method := c.methods.GetBusStopsList
 
-	jsonBlob, err := c.post(method, values)
+	jsonBlob, err := c.post(getBusStopsList, values)
 	if err != nil {
 		return BusStops{}, err
 	}
@@ -115,9 +116,8 @@ func (c *Client) GetRealTimeForecast(nodeId int) (Forecasts, error) {
 		Password string
 		NodeId   int
 	}{c.Username, c.Password, nodeId}
-	method := c.methods.GetRealTimeForecast
 
-	jsonBlob, err := c.post(method, values)
+	jsonBlob, err := c.post(getRealTimeForecast, values)
 	if err != nil {
 		return Forecasts{}, err
 	}

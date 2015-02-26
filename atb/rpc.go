@@ -11,23 +11,18 @@ type Method interface {
 	ParseResponse(body []byte) ([]byte, error)
 }
 
-type Methods struct {
-	GetBusStopsList     Method
-	GetRealTimeForecast Method
-}
-
-type GetBusStopsList struct {
-	XMLName  xml.Name           `xml:"Envelope"`
-	Result   []byte             `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
-	template *template.Template `xml:"-"`
-}
-
 func compileTemplate(t *template.Template, data interface{}) (string, error) {
 	var b bytes.Buffer
 	if err := t.Execute(&b, data); err != nil {
 		return "", err
 	}
 	return b.String(), nil
+}
+
+type GetBusStopsList struct {
+	XMLName  xml.Name           `xml:"Envelope"`
+	Result   []byte             `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
+	template *template.Template `xml:"-"`
 }
 
 func (m *GetBusStopsList) NewRequest(data interface{}) (string, error) {
@@ -60,13 +55,5 @@ func (m *GetRealTimeForecast) ParseResponse(body []byte) ([]byte, error) {
 	return forecast.Result, nil
 }
 
-func newMethods() Methods {
-	return Methods{
-		GetBusStopsList: &GetBusStopsList{
-			template: getBusStopsTemplate,
-		},
-		GetRealTimeForecast: &GetRealTimeForecast{
-			template: getRealTimeForecastTemplate,
-		},
-	}
-}
+var getBusStopsList = &GetBusStopsList{template: getBusStopsTemplate}
+var getRealTimeForecast = &GetRealTimeForecast{template: getRealTimeForecastTemplate}
