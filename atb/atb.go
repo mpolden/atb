@@ -1,20 +1,33 @@
-package main
+package atb
 
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 )
 
 const URL = "http://st.atb.no/InfoTransit/userservices.asmx"
 
-type Atb struct {
+type Client struct {
 	Username string
 	Password string
 	Methods  Methods
 }
 
-func (a *Atb) post(m Method, data interface{}) ([]byte, error) {
+func NewFromConfig(name string) (Client, error) {
+	data, err := ioutil.ReadFile(name)
+	if err != nil {
+		return Client{}, err
+	}
+	var client Client
+	if err := json.Unmarshal(data, &client); err != nil {
+		return Client{}, err
+	}
+	return client, nil
+}
+
+func (c *Client) post(m Method, data interface{}) ([]byte, error) {
 	req, err := m.CompileRequest(data)
 	if err != nil {
 		return nil, err
@@ -32,14 +45,14 @@ func (a *Atb) post(m Method, data interface{}) ([]byte, error) {
 	return jsonResponse, nil
 }
 
-func (a *Atb) GetBusStops() (BusStops, error) {
+func (c *Client) GetBusStops() (BusStops, error) {
 	values := struct {
 		Username string
 		Password string
-	}{a.Username, a.Password}
-	method := a.Methods.GetBusStopsList
+	}{c.Username, c.Password}
+	method := c.Methods.GetBusStopsList
 
-	jsonBlob, err := a.post(method, values)
+	jsonBlob, err := c.post(method, values)
 	if err != nil {
 		return BusStops{}, err
 	}

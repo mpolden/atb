@@ -1,24 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/jessevdk/go-flags"
-	"io/ioutil"
+	"github.com/martinp/atbapi/atb"
 	"log"
 	"os"
 )
-
-func ReadConfig(name string) (Atb, error) {
-	data, err := ioutil.ReadFile(name)
-	if err != nil {
-		return Atb{}, err
-	}
-	var atb Atb
-	if err := json.Unmarshal(data, &atb); err != nil {
-		return Atb{}, err
-	}
-	return atb, nil
-}
 
 func main() {
 	var opts struct {
@@ -30,13 +17,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	atb, err := ReadConfig(opts.Config)
+	client, err := atb.NewFromConfig(opts.Config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	methods, err := NewMethods(opts.Templates)
+	methods, err := atb.NewMethods(opts.Templates)
 	if err != nil {
 		log.Fatal(err)
 	}
-	atb.Methods = methods
+	client.Methods = methods
 }
