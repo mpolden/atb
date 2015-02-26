@@ -15,6 +15,22 @@ type Client struct {
 	methods  Methods
 }
 
+type BusStops struct {
+	Stops []BusStop `json:"Fermate"`
+}
+
+type BusStop struct {
+	CompanyId   int    `json:"cinAzienda"`
+	CompanyName string `json:"nomeAzienda"`
+	StopId      int    `json:"cinFermata"`
+	NodeId      string `json:"codAzNodo"`
+	Description string `json:"descrizione"`
+	Longitude   string `json:"lon"`
+	Latitude    int    `json:"lat"`
+	MobileCode  string `json:"codeMobile"`
+	MobileName  string `json:"nomeMobile"`
+}
+
 func NewFromConfig(name string) (Client, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
@@ -62,9 +78,9 @@ func (c *Client) GetBusStops() (BusStops, error) {
 		return BusStops{}, err
 	}
 
-	var stops busStops
+	var stops BusStops
 	if err := json.Unmarshal(jsonBlob, &stops); err != nil {
 		return BusStops{}, err
 	}
-	return stops.Convert()
+	return stops, nil
 }

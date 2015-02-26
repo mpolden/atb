@@ -1,6 +1,7 @@
-package atb
+package api
 
 import (
+	"github.com/martinp/atbapi/atb"
 	"strconv"
 )
 
@@ -18,35 +19,7 @@ type BusStop struct {
 	MobileName  string  `json:"mobileName"`
 }
 
-type busStops struct {
-	Stops []busStop `json:"Fermate"`
-}
-
-type busStop struct {
-	CompanyId   int    `json:"cinAzienda"`
-	CompanyName string `json:"nomeAzienda"`
-	StopId      int    `json:"cinFermata"`
-	NodeId      string `json:"codAzNodo"`
-	Description string `json:"descrizione"`
-	Longitude   string `json:"lon"`
-	Latitude    int    `json:"lat"`
-	MobileCode  string `json:"codeMobile"`
-	MobileName  string `json:"nomeMobile"`
-}
-
-func (s *busStops) Convert() (BusStops, error) {
-	stops := make([]BusStop, 0, len(s.Stops))
-	for _, stop := range s.Stops {
-		converted, err := stop.Convert()
-		if err != nil {
-			return BusStops{}, err
-		}
-		stops = append(stops, converted)
-	}
-	return BusStops{Stops: stops}, nil
-}
-
-func (s *busStop) Convert() (BusStop, error) {
+func convertBusStop(s atb.BusStop) (BusStop, error) {
 	nodeId, err := strconv.Atoi(s.NodeId)
 	if err != nil {
 		return BusStop{}, err
@@ -65,4 +38,16 @@ func (s *busStop) Convert() (BusStop, error) {
 		MobileCode:  s.MobileCode,
 		MobileName:  s.MobileName,
 	}, nil
+}
+
+func convertBusStops(s atb.BusStops) (BusStops, error) {
+	stops := make([]BusStop, 0, len(s.Stops))
+	for _, stop := range s.Stops {
+		converted, err := convertBusStop(stop)
+		if err != nil {
+			return BusStops{}, err
+		}
+		stops = append(stops, converted)
+	}
+	return BusStops{Stops: stops}, nil
 }
