@@ -20,8 +20,6 @@ type BusStops struct {
 }
 
 type BusStop struct {
-	CompanyId   int    `json:"cinAzienda"`
-	CompanyName string `json:"nomeAzienda"`
 	StopId      int    `json:"cinFermata"`
 	NodeId      string `json:"codAzNodo"`
 	Description string `json:"descrizione"`
@@ -29,6 +27,32 @@ type BusStop struct {
 	Latitude    int    `json:"lat"`
 	MobileCode  string `json:"codeMobile"`
 	MobileName  string `json:"nomeMobile"`
+}
+
+type Forecasts struct {
+	Nodes     []NodeInfo `json:"InfoNodo"`
+	Forecasts []Forecast `json:"Orari"`
+	Total     int        `json:"total"`
+}
+
+type NodeInfo struct {
+	Name              string `json:"nome_Az"`
+	NodeId            string `json:"codAzNodo"`
+	NodeName          string `json:"nomeNodo"`
+	NodeDescription   string `json:"descrNodo"`
+	BitMaskProperties string `json:"bitMaskProprieta"`
+	MobileCode        string `json:"codeMobile"`
+	Longitude         string `json:"coordLon"`
+	Latitude          string `json:"coordLat"`
+}
+
+type Forecast struct {
+	LineId                  string `json:"codAzLinea"`
+	LineDescription         string `json:"descrizioneLinea"`
+	RegisteredDepartureTime string `json:"orario"`
+	ScheduledDepartureTime  string `json:"orarioSched"`
+	StationForecast         string `json:"statoPrevisione"`
+	Destination             string `json:"capDest"`
 }
 
 func NewFromConfig(name string) (Client, error) {
@@ -83,4 +107,24 @@ func (c *Client) GetBusStops() (BusStops, error) {
 		return BusStops{}, err
 	}
 	return stops, nil
+}
+
+func (c *Client) GetRealTimeForecast(nodeId int) (Forecasts, error) {
+	values := struct {
+		Username string
+		Password string
+		NodeId   int
+	}{c.Username, c.Password, nodeId}
+	method := c.methods.GetRealTimeForecast
+
+	jsonBlob, err := c.post(method, values)
+	if err != nil {
+		return Forecasts{}, err
+	}
+
+	var forecasts Forecasts
+	if err := json.Unmarshal(jsonBlob, &forecasts); err != nil {
+		return Forecasts{}, err
+	}
+	return forecasts, nil
 }

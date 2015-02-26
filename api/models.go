@@ -19,6 +19,18 @@ type BusStop struct {
 	MobileName  string  `json:"mobileName"`
 }
 
+type Departures struct {
+	TowardsCentrum bool        `json:"isGoingTowardsCentrum"`
+	Departures     []Departure `json:"departures"`
+}
+
+type Departure struct {
+	LineId                  string `json:"line"`
+	RegisteredDepartureTime string `json:"registeredDepartureTime"`
+	ScheduledDepartureTime  string `json:"scheduledDepartureTime"`
+	Destination             string `json:"destination"`
+}
+
 func convertBusStop(s atb.BusStop) (BusStop, error) {
 	nodeId, err := strconv.Atoi(s.NodeId)
 	if err != nil {
@@ -50,4 +62,36 @@ func convertBusStops(s atb.BusStops) (BusStops, error) {
 		stops = append(stops, converted)
 	}
 	return BusStops{Stops: stops}, nil
+}
+
+func convertForecast(f atb.Forecast) (Departure, error) {
+	return Departure{
+		LineId:                  f.LineId,
+		Destination:             f.Destination,
+		RegisteredDepartureTime: f.RegisteredDepartureTime,
+		ScheduledDepartureTime:  f.ScheduledDepartureTime,
+	}, nil
+}
+
+func convertForecasts(f atb.Forecasts) (Departures, error) {
+	towardsCentrum := false
+	if len(f.Nodes) > 0 {
+		nodeId, err := strconv.Atoi(f.Nodes[0].NodeId)
+		if err != nil {
+			return Departures{}, err
+		}
+		towardsCentrum = (nodeId/1000)%2 == 1
+	}
+	departures := make([]Departure, 0, len(f.Forecasts))
+	for _, forecast := range f.Forecasts {
+		departure, err := convertForecast(forecast)
+		if err != nil {
+			return Departures{}, err
+		}
+		departures = append(departures, departure)
+	}
+	return Departures{
+		TowardsCentrum: towardsCentrum,
+		Departures:     departures,
+	}, nil
 }
