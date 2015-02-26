@@ -12,6 +12,18 @@ type Api struct {
 	Client atb.Client
 }
 
+func indentJSON(req *http.Request) bool {
+	_, ok := req.URL.Query()["pretty"]
+	return ok
+}
+
+func marshalJSON(data interface{}, indent bool) ([]byte, error) {
+	if indent {
+		return json.MarshalIndent(data, "", "  ")
+	}
+	return json.Marshal(data)
+}
+
 func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
 	_busStops, err := a.Client.GetBusStops()
 	if err != nil {
@@ -23,7 +35,8 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	jsonBlob, err := json.Marshal(busStops)
+	indent := indentJSON(req)
+	jsonBlob, err := marshalJSON(busStops, indent)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -37,7 +50,6 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 	nodeId, err := strconv.Atoi(vars["nodeId"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-
 	}
 	forecasts, err := a.Client.GetRealTimeForecast(nodeId)
 	if err != nil {
@@ -49,7 +61,8 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	jsonBlob, err := json.Marshal(departures)
+	indent := indentJSON(req)
+	jsonBlob, err := marshalJSON(departures, indent)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
