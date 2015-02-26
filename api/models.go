@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/martinp/atbapi/atb"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -96,6 +97,10 @@ func convertForecast(f atb.Forecast) (Departure, error) {
 	}, nil
 }
 
+func isTowardsCentrum(nodeId int) bool {
+	return (nodeId/1000)%2 == 1
+}
+
 func convertForecasts(f atb.Forecasts) (Departures, error) {
 	towardsCentrum := false
 	if len(f.Nodes) > 0 {
@@ -103,7 +108,7 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 		if err != nil {
 			return Departures{}, err
 		}
-		towardsCentrum = (nodeId/1000)%2 == 1
+		towardsCentrum = isTowardsCentrum(nodeId)
 	}
 	departures := make([]Departure, 0, len(f.Forecasts))
 	for _, forecast := range f.Forecasts {
