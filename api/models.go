@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/martinp/atbapi/atb"
 	"strconv"
+	"time"
 )
 
 type BusStops struct {
@@ -65,16 +66,32 @@ func convertBusStops(s atb.BusStops) (BusStops, error) {
 	return BusStops{Stops: stops}, nil
 }
 
+func convertTime(src string) (string, error) {
+	t, err := time.Parse("02.01.2006 15:04", src)
+	if err != nil {
+		return "", err
+	}
+	return t.Format("2006-01-02T15:04:05.000"), nil
+}
+
 func isRealtime(s string) bool {
 	return strings.EqualFold(s, "prev")
 }
 
 func convertForecast(f atb.Forecast) (Departure, error) {
+	registeredDeparture, err := convertTime(f.RegisteredDepartureTime)
+	if err != nil {
+		return Departure{}, err
+	}
+	scheduledDeparture, err := convertTime(f.ScheduledDepartureTime)
+	if err != nil {
+		return Departure{}, err
+	}
 	return Departure{
 		LineId:                  f.LineId,
 		Destination:             f.Destination,
-		RegisteredDepartureTime: f.RegisteredDepartureTime,
-		ScheduledDepartureTime:  f.ScheduledDepartureTime,
+		RegisteredDepartureTime: registeredDeparture,
+		ScheduledDepartureTime:  scheduledDeparture,
 		IsRealtimeData:          isRealtime(f.StationForecast),
 	}, nil
 }
