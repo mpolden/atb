@@ -37,7 +37,7 @@ Help Options:
 Get bus stops:
 
 ```
-$ curl 'http://localhost:8080/api/v1/busstops?pretty'
+$ curl 'http://localhost:8080/api/v1/busstops?pretty=true'
 {
   "stops": [
     ...
@@ -58,7 +58,7 @@ $ curl 'http://localhost:8080/api/v1/busstops?pretty'
 Get departures for a given bus stop:
 
 ```
-$ curl 'localhost:8080/api/v1/departures/16011376?pretty=true'
+$ curl 'http://localhost:8080/api/v1/departures/16011376?pretty=true'
 {
   "isGoingTowardsCentrum": true,
   "departures": [
@@ -100,6 +100,3 @@ $ curl 'localhost:8080/api/v1/departures/16011376?pretty=true'
   ]
 }
 ```
-
-
-
