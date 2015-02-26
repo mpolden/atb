@@ -6,9 +6,22 @@ import (
 	"text/template"
 )
 
+var (
+	getBusStopsList = &GetBusStopsList{
+		template: getBusStopsTemplate,
+	}
+	getRealTimeForecast = &GetRealTimeForecast{
+		template: getRealTimeForecastTemplate,
+	}
+)
+
 type Method interface {
 	NewRequest(data interface{}) (string, error)
 	ParseResponse(body []byte) ([]byte, error)
+}
+
+func templateMust(src string) *template.Template {
+	return template.Must(template.New("xml").Parse(src))
 }
 
 func compileTemplate(t *template.Template, data interface{}) (string, error) {
@@ -25,6 +38,12 @@ type GetBusStopsList struct {
 	template *template.Template `xml:"-"`
 }
 
+type GetRealTimeForecast struct {
+	XMLName  xml.Name           `xml:"Envelope"`
+	Result   []byte             `xml:"Body>getUserRealTimeForecastByStopResponse>getUserRealTimeForecastByStopResult"`
+	template *template.Template `xml:"-"`
+}
+
 func (m *GetBusStopsList) NewRequest(data interface{}) (string, error) {
 	return compileTemplate(m.template, data)
 }
@@ -35,12 +54,6 @@ func (m *GetBusStopsList) ParseResponse(body []byte) ([]byte, error) {
 		return nil, err
 	}
 	return stops.Result, nil
-}
-
-type GetRealTimeForecast struct {
-	XMLName  xml.Name           `xml:"Envelope"`
-	Result   []byte             `xml:"Body>getUserRealTimeForecastByStopResponse>getUserRealTimeForecastByStopResult"`
-	template *template.Template `xml:"-"`
 }
 
 func (m *GetRealTimeForecast) NewRequest(data interface{}) (string, error) {
@@ -54,6 +67,3 @@ func (m *GetRealTimeForecast) ParseResponse(body []byte) ([]byte, error) {
 	}
 	return forecast.Result, nil
 }
-
-var getBusStopsList = &GetBusStopsList{template: getBusStopsTemplate}
-var getRealTimeForecast = &GetRealTimeForecast{template: getRealTimeForecastTemplate}
