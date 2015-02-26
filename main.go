@@ -9,8 +9,7 @@ import (
 
 func main() {
 	var opts struct {
-		Config    string `short:"c" long:"config" description:"Path to config file" value-name:"FILE" default:"config.json"`
-		Templates string `short:"t" long:"templates" description:"Path to request templates directory" value-name:"PATH" default:"templates"`
+		Config string `short:"c" long:"config" description:"Path to config file" value-name:"FILE" default:"config.json"`
 	}
 	_, err := flags.ParseArgs(&opts, os.Args)
 	if err != nil {
@@ -21,9 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	methods, err := atb.NewMethods(opts.Templates)
 	if err != nil {
 		log.Fatal(err)
 	}
-	client.Methods = methods
 }

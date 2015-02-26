@@ -12,7 +12,7 @@ const URL = "http://st.atb.no/InfoTransit/userservices.asmx"
 type Client struct {
 	Username string
 	Password string
-	Methods  Methods
+	methods  Methods
 }
 
 func NewFromConfig(name string) (Client, error) {
@@ -24,6 +24,7 @@ func NewFromConfig(name string) (Client, error) {
 	if err := json.Unmarshal(data, &client); err != nil {
 		return Client{}, err
 	}
+	client.methods = createMethods()
 	return client, nil
 }
 
@@ -50,7 +51,7 @@ func (c *Client) GetBusStops() (BusStops, error) {
 		Username string
 		Password string
 	}{c.Username, c.Password}
-	method := c.Methods.GetBusStopsList
+	method := c.methods.GetBusStopsList
 
 	jsonBlob, err := c.post(method, values)
 	if err != nil {

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"gopkg.in/xmlpath.v1"
 	"io"
-	"io/ioutil"
-	"path/filepath"
 	"text/template"
 )
 
@@ -39,30 +37,13 @@ func (m *Method) ParseResponse(reader io.Reader) ([]byte, error) {
 	return value, nil
 }
 
-func Parse(tmplFile string) (*template.Template, error) {
-	contents, err := ioutil.ReadFile(tmplFile)
-	if err != nil {
-		return nil, err
-	}
-	tmpl, err := template.New("").Parse(string(contents))
-	if err != nil {
-		return nil, err
-	}
-	return tmpl, nil
-}
-
-func NewMethods(path string) (Methods, error) {
+func createMethods() Methods {
 	getBusStopsPath := xmlpath.MustCompile("/Envelope/Body/" +
 		"GetBusStopsListResponse/GetBusStopsListResult")
-	getBusStopsTmpl, err := Parse(filepath.Join(path,
-		"GetBusStopsList.tmpl"))
-	if err != nil {
-		return Methods{}, err
-	}
 	return Methods{
 		GetBusStopsList: Method{
-			Template: getBusStopsTmpl,
+			Template: GetBusStopsTemplate,
 			Path:     getBusStopsPath,
 		},
-	}, nil
+	}
 }
