@@ -12,13 +12,13 @@ type BusStops struct {
 }
 
 type BusStop struct {
-	StopId      int     `json:"stopId"`
-	NodeId      int     `json:"nodeId"`
-	Description string  `json:"description"`
-	Longitude   float64 `json:"longitude"`
-	Latitude    float64 `json:"latitude"`
-	MobileCode  string  `json:"mobileCode"`
-	MobileName  string  `json:"mobileName"`
+	StopId      int    `json:"stopId"`
+	NodeId      int    `json:"nodeId"`
+	Description string `json:"description"`
+	Longitude   int    `json:"longitude"`
+	Latitude    int    `json:"latitude"`
+	MobileCode  string `json:"mobileCode"`
+	MobileName  string `json:"mobileName"`
 }
 
 type Departures struct {
@@ -39,17 +39,16 @@ func convertBusStop(s atb.BusStop) (BusStop, error) {
 	if err != nil {
 		return BusStop{}, err
 	}
-	longitude, err := strconv.ParseFloat(s.Longitude, 64)
+	longitude, err := strconv.Atoi(s.Longitude)
 	if err != nil {
 		return BusStop{}, err
 	}
-	latitude := float64(s.Latitude)
 	return BusStop{
 		StopId:      s.StopId,
 		NodeId:      nodeId,
 		Description: s.Description,
 		Longitude:   longitude,
-		Latitude:    latitude,
+		Latitude:    s.Latitude,
 		MobileCode:  s.MobileCode,
 		MobileName:  s.MobileName,
 	}, nil
