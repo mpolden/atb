@@ -29,6 +29,7 @@ type Departure struct {
 	RegisteredDepartureTime string `json:"registeredDepartureTime"`
 	ScheduledDepartureTime  string `json:"scheduledDepartureTime"`
 	Destination             string `json:"destination"`
+	IsRealtimeData          bool   `json:"isRealtimeData"`
 }
 
 func convertBusStop(s atb.BusStop) (BusStop, error) {
@@ -64,12 +65,17 @@ func convertBusStops(s atb.BusStops) (BusStops, error) {
 	return BusStops{Stops: stops}, nil
 }
 
+func isRealtime(s string) bool {
+	return strings.EqualFold(s, "prev")
+}
+
 func convertForecast(f atb.Forecast) (Departure, error) {
 	return Departure{
 		LineId:                  f.LineId,
 		Destination:             f.Destination,
 		RegisteredDepartureTime: f.RegisteredDepartureTime,
 		ScheduledDepartureTime:  f.ScheduledDepartureTime,
+		IsRealtimeData:          isRealtime(f.StationForecast),
 	}, nil
 }
 
