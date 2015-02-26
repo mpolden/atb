@@ -20,10 +20,6 @@ type Method interface {
 	ParseResponse(body []byte) ([]byte, error)
 }
 
-func templateMust(src string) *template.Template {
-	return template.Must(template.New("xml").Parse(src))
-}
-
 func compileTemplate(t *template.Template, data interface{}) (string, error) {
 	var b bytes.Buffer
 	if err := t.Execute(&b, data); err != nil {
