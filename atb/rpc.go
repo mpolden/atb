@@ -2,48 +2,49 @@ package atb
 
 import (
 	"bytes"
-	"fmt"
-	"gopkg.in/xmlpath.v1"
-	"io"
+	"encoding/xml"
 	"text/template"
 )
 
-type Method struct {
-	Template *template.Template
-	Path     *xmlpath.Path
+type Method interface {
+	NewRequest(data interface{}) (string, error)
+	ParseResponse(body []byte) ([]byte, error)
 }
 
 type Methods struct {
 	GetBusStopsList Method
 }
 
-func (m *Method) CompileRequest(data interface{}) (string, error) {
+type GetBusStopsList struct {
+	XMLName  xml.Name           `xml:"Envelope"`
+	Result   []byte             `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
+	template *template.Template `xml:"-"`
+}
+
+func compileTemplate(t *template.Template, data interface{}) (string, error) {
 	var b bytes.Buffer
-	if err := m.Template.Execute(&b, data); err != nil {
+	if err := t.Execute(&b, data); err != nil {
 		return "", err
 	}
 	return b.String(), nil
 }
 
-func (m *Method) ParseResponse(reader io.Reader) ([]byte, error) {
-	node, err := xmlpath.Parse(reader)
-	if err != nil {
-		return nil, err
-	}
-	value, ok := m.Path.Bytes(node)
-	if !ok {
-		return nil, fmt.Errorf("could not find node")
-	}
-	return value, nil
+func (m *GetBusStopsList) NewRequest(data interface{}) (string, error) {
+	return compileTemplate(m.template, data)
 }
 
-func createMethods() Methods {
-	getBusStopsPath := xmlpath.MustCompile("/Envelope/Body/" +
-		"GetBusStopsListResponse/GetBusStopsListResult")
+func (m *GetBusStopsList) ParseResponse(body []byte) ([]byte, error) {
+	var stops GetBusStopsList
+	if err := xml.Unmarshal(body, &stops); err != nil {
+		return nil, err
+	}
+	return stops.Result, nil
+}
+
+func newMethods() Methods {
 	return Methods{
-		GetBusStopsList: Method{
-			Template: GetBusStopsTemplate,
-			Path:     getBusStopsPath,
+		GetBusStopsList: &GetBusStopsList{
+			template: getBusStopsTemplate,
 		},
 	}
 }

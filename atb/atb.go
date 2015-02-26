@@ -24,12 +24,12 @@ func NewFromConfig(name string) (Client, error) {
 	if err := json.Unmarshal(data, &client); err != nil {
 		return Client{}, err
 	}
-	client.methods = createMethods()
+	client.methods = newMethods()
 	return client, nil
 }
 
 func (c *Client) post(m Method, data interface{}) ([]byte, error) {
-	req, err := m.CompileRequest(data)
+	req, err := m.NewRequest(data)
 	if err != nil {
 		return nil, err
 	}
@@ -39,11 +39,15 @@ func (c *Client) post(m Method, data interface{}) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	jsonResponse, err := m.ParseResponse(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return jsonResponse, nil
+	jsonBlob, err := m.ParseResponse(body)
+	if err != nil {
+		return nil, err
+	}
+	return jsonBlob, nil
 }
 
 func (c *Client) GetBusStops() (BusStops, error) {
