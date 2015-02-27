@@ -116,7 +116,7 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(jsonBlob)
 }
 
-func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
+func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) {
 	indent := indentJSON(req)
 	vars := mux.Vars(req)
 	nodeId, err := strconv.Atoi(vars["nodeId"])
@@ -177,7 +177,7 @@ func ListenAndServe(client atb.Client, addr string) error {
 	api := New(client)
 	r := mux.NewRouter()
 	r.HandleFunc("/api/v1/busstops", api.BusStopsHandler)
-	r.HandleFunc("/api/v1/departures/{nodeId:[0-9]+}", api.ForecastHandler)
+	r.HandleFunc("/api/v1/departures/{nodeId:[0-9]+}", api.DeparturesHandler)
 	http.Handle("/", r)
 	return http.ListenAndServe(addr, nil)
 }
