@@ -8,7 +8,8 @@ import (
 )
 
 type BusStops struct {
-	Stops []BusStop `json:"stops"`
+	Stops   []BusStop `json:"stops"`
+	nodeIds map[int]struct{}
 }
 
 type BusStop struct {

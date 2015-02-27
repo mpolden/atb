@@ -48,6 +48,11 @@ func (a *Api) getBusStops() (BusStops, error) {
 	if err != nil {
 		return BusStops{}, err
 	}
+	// Create a map of nodeIds
+	busStops.nodeIds = make(map[int]struct{}, len(busStops.Stops))
+	for _, s := range busStops.Stops {
+		busStops.nodeIds[s.NodeId] = struct{}{}
+	}
 	log.Print("Adding bus stops to cache")
 	a.busStopsCache.Set(cacheKey, busStops, cache.DefaultExpiration)
 	return busStops, nil
@@ -89,6 +94,21 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 		log.Print(err)
 		return
 	}
+
+	busStops, err := a.getBusStops()
+	if err != nil {
+		http.Error(w, "Could not get bus stops",
+			http.StatusInternalServerError)
+		log.Print(err)
+		return
+	}
+
+	_, knownBusStop := busStops.nodeIds[nodeId]
+	if !knownBusStop {
+		http.Error(w, "No such bus stop", http.StatusNotFound)
+		return
+	}
+
 	departures, err := convertForecasts(forecasts)
 	if err != nil {
 		http.Error(w, "Failed to convert forecast",
