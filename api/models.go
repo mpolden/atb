@@ -36,6 +36,7 @@ type Departure struct {
 }
 
 type Error struct {
+	error   error  `json:"-"`
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 }

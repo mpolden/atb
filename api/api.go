@@ -18,31 +18,11 @@ type Api struct {
 	departuresCache *cache.Cache
 }
 
-func indentJSON(req *http.Request) bool {
-	_, ok := req.URL.Query()["pretty"]
-	return ok
-}
-
 func marshalJSON(data interface{}, indent bool) ([]byte, error) {
 	if indent {
 		return json.MarshalIndent(data, "", "  ")
 	}
 	return json.Marshal(data)
-}
-
-func errorJSON(w http.ResponseWriter, message string, code int, indent bool) {
-	apiError := Error{
-		Message: message,
-		Status:  code,
-	}
-	data, err := marshalJSON(apiError, indent)
-	if err != nil {
-		// If the error marshalling fails it's time to call it a day
-		panic(err)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(data)
 }
 
 func (a *Api) getBusStops() (BusStops, error) {
@@ -96,69 +76,84 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 	return departures, nil
 }
 
-func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
-	indent := indentJSON(req)
+func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 	busStops, err := a.getBusStops()
 	if err != nil {
-		errorJSON(w, "Failed to get bus stops",
-			http.StatusInternalServerError, indent)
 		log.Print(err)
-		return
+		return &Error{
+			error:   err,
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get bus stops from atb",
+		}
 	}
-	jsonBlob, err := marshalJSON(busStops, indent)
+	jsonBlob, err := json.Marshal(busStops)
 	if err != nil {
-		errorJSON(w, "Failed to marshal bus stops",
-			http.StatusInternalServerError, indent)
 		log.Print(err)
-		return
+		return &Error{
+			error:   err,
+			Status:  http.StatusInternalServerError,
+			Message: "failed to marshal bus stops",
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBlob)
+	return nil
 }
 
-func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) {
-	indent := indentJSON(req)
+func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error {
 	vars := mux.Vars(req)
 	nodeId, err := strconv.Atoi(vars["nodeId"])
 	if err != nil {
-		errorJSON(w, "Missing or invalid nodeId", http.StatusBadRequest,
-			indent)
 		log.Print(err)
-		return
+		return &Error{
+			error:   err,
+			Status:  http.StatusBadRequest,
+			Message: "missing or invalid nodeId",
+		}
 	}
 
 	busStops, err := a.getBusStops()
 	if err != nil {
-		errorJSON(w, "Could not get bus stops",
-			http.StatusInternalServerError, indent)
 		log.Print(err)
-		return
+		return &Error{
+			error:   err,
+			Status:  http.StatusInternalServerError,
+			Message: "could not get bus stops from atb",
+		}
 	}
 
 	_, knownBusStop := busStops.nodeIds[nodeId]
 	if !knownBusStop {
-		errorJSON(w, fmt.Sprintf("Bus stop with nodeId=%d not found",
-			nodeId), http.StatusNotFound, indent)
-		return
+		msg := fmt.Sprintf("bus stop with nodeId=%d not found", nodeId)
+		return &Error{
+			error:   err,
+			Status:  http.StatusNotFound,
+			Message: msg,
+		}
 	}
 
 	departures, err := a.getDepartures(nodeId)
 	if err != nil {
-		errorJSON(w, "Could not get departures",
-			http.StatusInternalServerError, indent)
 		log.Print(err)
-		return
+		return &Error{
+			error:   err,
+			Status:  http.StatusInternalServerError,
+			Message: "could not get departures from atb",
+		}
 	}
 
-	jsonBlob, err := marshalJSON(departures, indent)
+	jsonBlob, err := json.Marshal(departures)
 	if err != nil {
-		errorJSON(w, "Failed to marshal departures",
-			http.StatusInternalServerError, indent)
 		log.Print(err)
-		return
+		return &Error{
+			error:   err,
+			Status:  http.StatusInternalServerError,
+			Message: "failed to marshal departures",
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBlob)
+	return nil
 }
 
 func New(client atb.Client) Api {
@@ -173,11 +168,29 @@ func New(client atb.Client) Api {
 	}
 }
 
+type appHandler func(http.ResponseWriter, *http.Request) *Error
+
+func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if e := fn(w, r); e != nil { // e is *Error, not os.Error.
+		if e.error != nil {
+			log.Print(e.error)
+		}
+		data, err := marshal(e, true)
+		if err != nil {
+			// Should never happen
+			panic(err)
+		}
+		w.WriteHeader(e.Status)
+		w.Write(data)
+	}
+}
+
 func ListenAndServe(client atb.Client, addr string) error {
 	api := New(client)
 	r := mux.NewRouter()
-	r.HandleFunc("/api/v1/busstops", api.BusStopsHandler)
-	r.HandleFunc("/api/v1/departures/{nodeId:[0-9]+}", api.DeparturesHandler)
+	r.Handle("/api/v1/busstops", appHandler(api.BusStopsHandler))
+	r.Handle("/api/v1/departures/{nodeId:[0-9]+}",
+		appHandler(api.DeparturesHandler))
 	http.Handle("/", r)
 	return http.ListenAndServe(addr, nil)
 }
