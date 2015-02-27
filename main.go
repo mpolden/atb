@@ -23,8 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	api := api.New(client)
-	if err := api.ListenAndServe(opts.Listen); err != nil {
+	if err := api.ListenAndServe(client, opts.Listen); err != nil {
 		log.Fatal(err)
 	}
 }

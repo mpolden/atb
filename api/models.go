@@ -66,7 +66,7 @@ func convertBusStops(s atb.BusStops) (BusStops, error) {
 	return BusStops{Stops: stops}, nil
 }
 
-func convertTime(src string) (string, error) {
+func ConvertTime(src string) (string, error) {
 	t, err := time.Parse("02.01.2006 15:04", src)
 	if err != nil {
 		return "", err
@@ -74,16 +74,16 @@ func convertTime(src string) (string, error) {
 	return t.Format("2006-01-02T15:04:05.000"), nil
 }
 
-func isRealtime(s string) bool {
-	return strings.EqualFold(s, "prev")
+func IsRealtime(stationForecast string) bool {
+	return strings.EqualFold(stationForecast, "prev")
 }
 
 func convertForecast(f atb.Forecast) (Departure, error) {
-	registeredDeparture, err := convertTime(f.RegisteredDepartureTime)
+	registeredDeparture, err := ConvertTime(f.RegisteredDepartureTime)
 	if err != nil {
 		return Departure{}, err
 	}
-	scheduledDeparture, err := convertTime(f.ScheduledDepartureTime)
+	scheduledDeparture, err := ConvertTime(f.ScheduledDepartureTime)
 	if err != nil {
 		return Departure{}, err
 	}
@@ -92,11 +92,11 @@ func convertForecast(f atb.Forecast) (Departure, error) {
 		Destination:             f.Destination,
 		RegisteredDepartureTime: registeredDeparture,
 		ScheduledDepartureTime:  scheduledDeparture,
-		IsRealtimeData:          isRealtime(f.StationForecast),
+		IsRealtimeData:          IsRealtime(f.StationForecast),
 	}, nil
 }
 
-func isTowardsCentrum(nodeId int) bool {
+func IsTowardsCentrum(nodeId int) bool {
 	return (nodeId/1000)%2 == 1
 }
 
@@ -107,7 +107,7 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 		if err != nil {
 			return Departures{}, err
 		}
-		towardsCentrum = isTowardsCentrum(nodeId)
+		towardsCentrum = IsTowardsCentrum(nodeId)
 	}
 	departures := make([]Departure, 0, len(f.Forecasts))
 	for _, forecast := range f.Forecasts {

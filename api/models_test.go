@@ -57,7 +57,7 @@ func TestConvertBusStops(t *testing.T) {
 }
 
 func TestConvertTime(t *testing.T) {
-	time, err := convertTime("26.02.2015 18:38")
+	time, err := ConvertTime("26.02.2015 18:38")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,13 +68,13 @@ func TestConvertTime(t *testing.T) {
 }
 
 func TestIsRealtime(t *testing.T) {
-	if !isRealtime("prev") {
+	if !IsRealtime("prev") {
 		t.Fatal("Expected true")
 	}
-	if !isRealtime("Prev") {
+	if !IsRealtime("Prev") {
 		t.Fatal("Expected true")
 	}
-	if isRealtime("foo") {
+	if IsRealtime("foo") {
 		t.Fatal("Expected false")
 	}
 }
@@ -105,10 +105,10 @@ func TestConvertForecast(t *testing.T) {
 }
 
 func TestIsTowardsCentrum(t *testing.T) {
-	if !isTowardsCentrum(16011376) {
+	if !IsTowardsCentrum(16011376) {
 		t.Fatal("Expected true")
 	}
-	if isTowardsCentrum(16010376) {
+	if IsTowardsCentrum(16010376) {
 		t.Fatal("Expected false")
 	}
 }

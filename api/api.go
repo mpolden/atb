@@ -86,15 +86,11 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(jsonBlob)
 }
 
-func New(client atb.Client) Api {
+func ListenAndServe(client atb.Client, addr string) error {
 	api := Api{Client: client}
 	r := mux.NewRouter()
 	r.HandleFunc("/api/v1/busstops", api.BusStopsHandler)
 	r.HandleFunc("/api/v1/departures/{nodeId:[0-9]+}", api.ForecastHandler)
 	http.Handle("/", r)
-	return api
-}
-
-func (a *Api) ListenAndServe(addr string) error {
 	return http.ListenAndServe(addr, nil)
 }
