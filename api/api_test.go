@@ -32,7 +32,7 @@ func TestMarshal(t *testing.T) {
 
 func newTestServer(path string, body string) *httptest.Server {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
 		fmt.Fprint(w, body)
 	}
 	mux := http.NewServeMux()
