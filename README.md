@@ -8,6 +8,8 @@ public API and converts the responses into a sane format.
 You can request access to the SOAP API provided by AtB
 [here](https://www.atb.no/aapne-data/category419.html) (Norwegian).
 
+The public JSON API should have the same format as [BusBuddy](https://github.com/norrs/busbuddy).
+
 ## Usage
 
 ```
