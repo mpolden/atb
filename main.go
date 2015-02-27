@@ -23,6 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Printf("Listening on %s", opts.Listen)
 	if err := api.ListenAndServe(client, opts.Listen); err != nil {
 		log.Fatal(err)
 	}
