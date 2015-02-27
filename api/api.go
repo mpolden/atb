@@ -13,8 +13,9 @@ import (
 )
 
 type Api struct {
-	Client        atb.Client
-	busStopsCache *cache.Cache
+	Client          atb.Client
+	busStopsCache   *cache.Cache
+	departuresCache *cache.Cache
 }
 
 func indentJSON(req *http.Request) bool {
@@ -53,9 +54,31 @@ func (a *Api) getBusStops() (BusStops, error) {
 	for _, s := range busStops.Stops {
 		busStops.nodeIds[s.NodeId] = struct{}{}
 	}
-	log.Print("Adding bus stops to cache")
 	a.busStopsCache.Set(cacheKey, busStops, cache.DefaultExpiration)
 	return busStops, nil
+}
+
+func (a *Api) getDepartures(nodeId int) (Departures, error) {
+	cacheKey := string(nodeId)
+	cached, ok := a.departuresCache.Get(cacheKey)
+	if ok {
+		cachedDepartures, ok := cached.(Departures)
+		if !ok {
+			return Departures{}, fmt.Errorf(
+				"type assertion of cached value failed")
+		}
+		return cachedDepartures, nil
+	}
+	forecasts, err := a.Client.GetRealTimeForecast(nodeId)
+	if err != nil {
+		return Departures{}, err
+	}
+	departures, err := convertForecasts(forecasts)
+	if err != nil {
+		return Departures{}, err
+	}
+	a.departuresCache.Set(cacheKey, departures, cache.DefaultExpiration)
+	return departures, nil
 }
 
 func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
@@ -87,13 +110,6 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 		log.Print(err)
 		return
 	}
-	forecasts, err := a.Client.GetRealTimeForecast(nodeId)
-	if err != nil {
-		http.Error(w, "Failed to get forecast from upstream",
-			http.StatusInternalServerError)
-		log.Print(err)
-		return
-	}
 
 	busStops, err := a.getBusStops()
 	if err != nil {
@@ -109,13 +125,14 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	departures, err := convertForecasts(forecasts)
+	departures, err := a.getDepartures(nodeId)
 	if err != nil {
-		http.Error(w, "Failed to convert forecast",
+		http.Error(w, "Failed to get departures",
 			http.StatusInternalServerError)
 		log.Print(err)
 		return
 	}
+
 	indent := indentJSON(req)
 	jsonBlob, err := marshalJSON(departures, indent)
 	if err != nil {
@@ -131,9 +148,12 @@ func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
 func New(client atb.Client) Api {
 	// Cache bus stops for 1 week, check for expiration every day
 	busStopsCache := cache.New(168*time.Hour, 24*time.Hour)
+	// Cache departures for 1 minute, check for expiration every 30 seconds
+	departuresCache := cache.New(1*time.Minute, 30*time.Second)
 	return Api{
-		Client:        client,
-		busStopsCache: busStopsCache,
+		Client:          client,
+		busStopsCache:   busStopsCache,
+		departuresCache: departuresCache,
 	}
 }
 
