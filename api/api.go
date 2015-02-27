@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/martinp/atbapi/atb"
 	"github.com/pmylund/go-cache"
@@ -18,7 +19,7 @@ type Api struct {
 	departuresCache *cache.Cache
 }
 
-func marshalJSON(data interface{}, indent bool) ([]byte, error) {
+func marshal(data interface{}, indent bool) ([]byte, error) {
 	if indent {
 		return json.MarshalIndent(data, "", "  ")
 	}
@@ -86,7 +87,7 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 			Message: "failed to get bus stops from atb",
 		}
 	}
-	jsonBlob, err := json.Marshal(busStops)
+	jsonBlob, err := marshal(busStops, context.Get(req, "indent").(bool))
 	if err != nil {
 		log.Print(err)
 		return &Error{
@@ -95,7 +96,6 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 			Message: "failed to marshal bus stops",
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBlob)
 	return nil
 }
@@ -111,7 +111,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 			Message: "missing or invalid nodeId",
 		}
 	}
-
 	busStops, err := a.getBusStops()
 	if err != nil {
 		log.Print(err)
@@ -121,7 +120,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 			Message: "could not get bus stops from atb",
 		}
 	}
-
 	_, knownBusStop := busStops.nodeIds[nodeId]
 	if !knownBusStop {
 		msg := fmt.Sprintf("bus stop with nodeId=%d not found", nodeId)
@@ -131,7 +129,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 			Message: msg,
 		}
 	}
-
 	departures, err := a.getDepartures(nodeId)
 	if err != nil {
 		log.Print(err)
@@ -141,8 +138,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 			Message: "could not get departures from atb",
 		}
 	}
-
-	jsonBlob, err := json.Marshal(departures)
+	jsonBlob, err := marshal(departures, context.Get(req, "indent").(bool))
 	if err != nil {
 		log.Print(err)
 		return &Error{
@@ -151,7 +147,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 			Message: "failed to marshal departures",
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBlob)
 	return nil
 }
@@ -185,12 +180,21 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func requestFilter(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, indent := r.URL.Query()["pretty"]
+		context.Set(r, "indent", indent)
+		w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func ListenAndServe(client atb.Client, addr string) error {
 	api := New(client)
 	r := mux.NewRouter()
 	r.Handle("/api/v1/busstops", appHandler(api.BusStopsHandler))
 	r.Handle("/api/v1/departures/{nodeId:[0-9]+}",
 		appHandler(api.DeparturesHandler))
-	http.Handle("/", r)
+	http.Handle("/", requestFilter(r))
 	return http.ListenAndServe(addr, nil)
 }
