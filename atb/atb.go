@@ -70,7 +70,7 @@ func NewFromConfig(name string) (Client, error) {
 	return client, nil
 }
 
-func (c *Client) post(m Method, data interface{}) ([]byte, error) {
+func (c *Client) post(m method, data interface{}) ([]byte, error) {
 	req, err := m.NewRequest(data)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (c *Client) GetBusStops() (BusStops, error) {
 		Password string
 	}{c.Username, c.Password}
 
-	jsonBlob, err := c.post(getBusStopsList, values)
+	jsonBlob, err := c.post(busStopsList, values)
 	if err != nil {
 		return BusStops{}, err
 	}
@@ -117,7 +117,7 @@ func (c *Client) GetRealTimeForecast(nodeId int) (Forecasts, error) {
 		NodeId   int
 	}{c.Username, c.Password, nodeId}
 
-	jsonBlob, err := c.post(getRealTimeForecast, values)
+	jsonBlob, err := c.post(realTimeForecast, values)
 	if err != nil {
 		return Forecasts{}, err
 	}
