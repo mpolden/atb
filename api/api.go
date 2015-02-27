@@ -55,7 +55,7 @@ func (a *Api) getBusStops() (BusStops, error) {
 }
 
 func (a *Api) getDepartures(nodeId int) (Departures, error) {
-	cacheKey := string(nodeId)
+	cacheKey := strconv.Itoa(nodeId)
 	cached, ok := a.departuresCache.Get(cacheKey)
 	if ok {
 		cachedDepartures, ok := cached.(Departures)
