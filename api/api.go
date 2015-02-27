@@ -30,6 +30,21 @@ func marshalJSON(data interface{}, indent bool) ([]byte, error) {
 	return json.Marshal(data)
 }
 
+func errorJSON(w http.ResponseWriter, message string, code int, indent bool) {
+	apiError := Error{
+		Message: message,
+		Status:  code,
+	}
+	data, err := marshalJSON(apiError, indent)
+	if err != nil {
+		// If the error marshalling fails it's time to call it a day
+		panic(err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(data)
+}
+
 func (a *Api) getBusStops() (BusStops, error) {
 	const cacheKey = "stops"
 	cached, ok := a.busStopsCache.Get(cacheKey)
@@ -82,19 +97,18 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 }
 
 func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
+	indent := indentJSON(req)
 	busStops, err := a.getBusStops()
 	if err != nil {
-		// XXX: Return JSON
-		http.Error(w, "Failed to get bus stops",
-			http.StatusInternalServerError)
+		errorJSON(w, "Failed to get bus stops",
+			http.StatusInternalServerError, indent)
 		log.Print(err)
 		return
 	}
-	indent := indentJSON(req)
 	jsonBlob, err := marshalJSON(busStops, indent)
 	if err != nil {
-		http.Error(w, "Failed to marshal bus stops",
-			http.StatusInternalServerError)
+		errorJSON(w, "Failed to marshal bus stops",
+			http.StatusInternalServerError, indent)
 		log.Print(err)
 		return
 	}
@@ -103,41 +117,43 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (a *Api) ForecastHandler(w http.ResponseWriter, req *http.Request) {
+	indent := indentJSON(req)
 	vars := mux.Vars(req)
 	nodeId, err := strconv.Atoi(vars["nodeId"])
 	if err != nil {
-		http.Error(w, "Missing or invalid nodeId", http.StatusBadRequest)
+		errorJSON(w, "Missing or invalid nodeId", http.StatusBadRequest,
+			indent)
 		log.Print(err)
 		return
 	}
 
 	busStops, err := a.getBusStops()
 	if err != nil {
-		http.Error(w, "Could not get bus stops",
-			http.StatusInternalServerError)
+		errorJSON(w, "Could not get bus stops",
+			http.StatusInternalServerError, indent)
 		log.Print(err)
 		return
 	}
 
 	_, knownBusStop := busStops.nodeIds[nodeId]
 	if !knownBusStop {
-		http.Error(w, "No such bus stop", http.StatusNotFound)
+		errorJSON(w, fmt.Sprintf("Bus stop with nodeId=%d not found",
+			nodeId), http.StatusNotFound, indent)
 		return
 	}
 
 	departures, err := a.getDepartures(nodeId)
 	if err != nil {
-		http.Error(w, "Failed to get departures",
-			http.StatusInternalServerError)
+		errorJSON(w, "Could not get departures",
+			http.StatusInternalServerError, indent)
 		log.Print(err)
 		return
 	}
 
-	indent := indentJSON(req)
 	jsonBlob, err := marshalJSON(departures, indent)
 	if err != nil {
-		http.Error(w, "Failed to marshal departures",
-			http.StatusInternalServerError)
+		errorJSON(w, "Failed to marshal departures",
+			http.StatusInternalServerError, indent)
 		log.Print(err)
 		return
 	}

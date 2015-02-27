@@ -35,6 +35,11 @@ type Departure struct {
 	IsRealtimeData          bool   `json:"isRealtimeData"`
 }
 
+type Error struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+}
+
 func convertBusStop(s atb.BusStop) (BusStop, error) {
 	nodeId, err := strconv.Atoi(s.NodeId)
 	if err != nil {
