@@ -156,6 +156,14 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	return nil
 }
 
+func (a *Api) NotFoundHandler(w http.ResponseWriter, req *http.Request) *Error {
+	return &Error{
+		error:   nil,
+		Status:  http.StatusNotFound,
+		Message: "route not found",
+	}
+}
+
 func New(client atb.Client, stopsExpiration, depExpiration time.Duration) Api {
 	cache := cache.New(depExpiration, 30*time.Second)
 	return Api{
@@ -199,6 +207,7 @@ func (a *Api) ListenAndServe(addr string) error {
 	r.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
 	r.Handle("/api/v1/departures/{nodeId:[0-9]+}",
 		appHandler(a.DeparturesHandler))
+	r.NotFoundHandler = appHandler(a.NotFoundHandler)
 	http.Handle("/", requestFilter(r))
 	return http.ListenAndServe(addr, nil)
 }
