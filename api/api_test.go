@@ -49,7 +49,7 @@ func TestGetBusStops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cached, ok := api.busStopsCache.Get("stops")
+	cached, ok := api.cache.Get("stops")
 	if !ok {
 		t.Fatal("Expected true")
 	}
@@ -74,7 +74,7 @@ func TestGetDepartures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cached, ok := api.departuresCache.Get("16011376")
+	cached, ok := api.cache.Get("16011376")
 	if !ok {
 		t.Fatal("Expected true")
 	}

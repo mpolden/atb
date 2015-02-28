@@ -14,9 +14,8 @@ import (
 )
 
 type Api struct {
-	Client          atb.Client
-	busStopsCache   *cache.Cache
-	departuresCache *cache.Cache
+	Client atb.Client
+	cache  *cache.Cache
 }
 
 func marshal(data interface{}, indent bool) ([]byte, error) {
@@ -28,7 +27,7 @@ func marshal(data interface{}, indent bool) ([]byte, error) {
 
 func (a *Api) getBusStops() (BusStops, error) {
 	const cacheKey = "stops"
-	cached, ok := a.busStopsCache.Get(cacheKey)
+	cached, ok := a.cache.Get(cacheKey)
 	if ok {
 		cachedBusStops, ok := cached.(BusStops)
 		if !ok {
@@ -50,13 +49,13 @@ func (a *Api) getBusStops() (BusStops, error) {
 	for _, s := range busStops.Stops {
 		busStops.nodeIds[s.NodeId] = struct{}{}
 	}
-	a.busStopsCache.Set(cacheKey, busStops, cache.DefaultExpiration)
+	a.cache.Set(cacheKey, busStops, 168*time.Hour)
 	return busStops, nil
 }
 
 func (a *Api) getDepartures(nodeId int) (Departures, error) {
 	cacheKey := strconv.Itoa(nodeId)
-	cached, ok := a.departuresCache.Get(cacheKey)
+	cached, ok := a.cache.Get(cacheKey)
 	if ok {
 		cachedDepartures, ok := cached.(Departures)
 		if !ok {
@@ -73,7 +72,7 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 	if err != nil {
 		return Departures{}, err
 	}
-	a.departuresCache.Set(cacheKey, departures, cache.DefaultExpiration)
+	a.cache.Set(cacheKey, departures, cache.DefaultExpiration)
 	return departures, nil
 }
 
@@ -152,14 +151,10 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 }
 
 func New(client atb.Client) Api {
-	// Cache bus stops for 1 week, check for expiration every day
-	busStopsCache := cache.New(168*time.Hour, 24*time.Hour)
-	// Cache departures for 1 minute, check for expiration every 30 seconds
-	departuresCache := cache.New(1*time.Minute, 30*time.Second)
+	cache := cache.New(1*time.Minute, 30*time.Second)
 	return Api{
-		Client:          client,
-		busStopsCache:   busStopsCache,
-		departuresCache: departuresCache,
+		Client: client,
+		cache:  cache,
 	}
 }
 
