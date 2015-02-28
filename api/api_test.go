@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestMarshal(t *testing.T) {
@@ -44,7 +45,7 @@ func TestGetBusStops(t *testing.T) {
 	server := newTestServer("/", busStopsResponse)
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
-	api := New(atb)
+	api := New(atb, 168*time.Hour, 1*time.Minute)
 	_, err := api.getBusStops()
 	if err != nil {
 		t.Fatal(err)
@@ -69,7 +70,7 @@ func TestGetDepartures(t *testing.T) {
 	server := newTestServer("/", forecastResponse)
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
-	api := New(atb)
+	api := New(atb, 168*time.Hour, 1*time.Minute)
 	_, err := api.getDepartures(16011376)
 	if err != nil {
 		t.Fatal(err)
