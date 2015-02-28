@@ -85,7 +85,6 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 	busStops, err := a.getBusStops()
 	if err != nil {
-		log.Print(err)
 		return &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
@@ -94,7 +93,6 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 	}
 	jsonBlob, err := marshal(busStops, context.Get(req, "indent").(bool))
 	if err != nil {
-		log.Print(err)
 		return &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
@@ -109,7 +107,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	vars := mux.Vars(req)
 	nodeId, err := strconv.Atoi(vars["nodeId"])
 	if err != nil {
-		log.Print(err)
 		return &Error{
 			err:     err,
 			Status:  http.StatusBadRequest,
@@ -118,7 +115,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	}
 	busStops, err := a.getBusStops()
 	if err != nil {
-		log.Print(err)
 		return &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
@@ -136,7 +132,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	}
 	departures, err := a.getDepartures(nodeId)
 	if err != nil {
-		log.Print(err)
 		return &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
@@ -145,7 +140,6 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	}
 	jsonBlob, err := marshal(departures, context.Get(req, "indent").(bool))
 	if err != nil {
-		log.Print(err)
 		return &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
