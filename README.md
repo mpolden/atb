@@ -2,8 +2,11 @@
 
 [![Build Status](https://travis-ci.org/martinp/atbapi.png)](https://travis-ci.org/martinp/atbapi)
 
-JSON API for bus data in Trondheim, Norway. This API proxies requests to the AtB
-public API and converts the responses into a sane format.
+A minimal JSON API for bus data in Trondheim, Norway. This API proxies requests
+to the AtB public API and converts the responses into a sane format.
+
+Responses from AtBs public API are cached. By default bus stops will be cached
+for 1 week and departures for 1 minute.
 
 You can request access to the SOAP API provided by AtB
 [here](https://www.atb.no/aapne-data/category419.html) (Norwegian).
@@ -18,16 +21,18 @@ Usage:
   atbapi [OPTIONS]
 
 Application Options:
-  -l, --listen=        Listen address (:8080)
-  -c, --config=FILE    Path to config file (config.json)
+  -l, --listen=ADDRESS               Listen address (:8080)
+  -c, --config=FILE                  Path to config file (config.json)
+  -s, --cache-stops=DURATION         Bus stops cache duration (168h)
+  -d, --cache-departures=DURATION    Departures cache duration (1m)
 
 Help Options:
-  -h, --help           Show this help message
+  -h, --help                         Show this help message
 ```
 
 ## Example config
 
-```json
+```
 {
   "Username": "username",
   "Password": "password"
@@ -41,9 +46,8 @@ support the parameter `?pretty` to return pretty-printed JSON.
 
 Example:
 
-`$ curl 'http://localhost:8080/api/v1/busstops?pretty'`
-
-```json
+```
+$ curl 'http://localhost:8080/api/v1/busstops?pretty'
 {
   "stops": [
     ...
@@ -66,9 +70,8 @@ stop, identified by `nodeId`.
 
 Example:
 
-`$ curl 'http://localhost:8080/api/v1/departures/16011376?pretty'`
-
-```json
+```
+$ curl 'http://localhost:8080/api/v1/departures/16011376?pretty'
 {
   "isGoingTowardsCentrum": true,
   "departures": [
