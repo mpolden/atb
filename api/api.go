@@ -87,7 +87,7 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 	if err != nil {
 		log.Print(err)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "failed to get bus stops from atb",
 		}
@@ -96,7 +96,7 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
 	if err != nil {
 		log.Print(err)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "failed to marshal bus stops",
 		}
@@ -111,7 +111,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	if err != nil {
 		log.Print(err)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusBadRequest,
 			Message: "missing or invalid nodeId",
 		}
@@ -120,7 +120,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	if err != nil {
 		log.Print(err)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "could not get bus stops from atb",
 		}
@@ -129,7 +129,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	if !knownBusStop {
 		msg := fmt.Sprintf("bus stop with nodeId=%d not found", nodeId)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusNotFound,
 			Message: msg,
 		}
@@ -138,7 +138,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	if err != nil {
 		log.Print(err)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "could not get departures from atb",
 		}
@@ -147,7 +147,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	if err != nil {
 		log.Print(err)
 		return &Error{
-			error:   err,
+			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "failed to marshal departures",
 		}
@@ -158,7 +158,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 
 func (a *Api) NotFoundHandler(w http.ResponseWriter, req *http.Request) *Error {
 	return &Error{
-		error:   nil,
+		err:     nil,
 		Status:  http.StatusNotFound,
 		Message: "route not found",
 	}
@@ -180,8 +180,8 @@ type appHandler func(http.ResponseWriter, *http.Request) *Error
 
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if e := fn(w, r); e != nil { // e is *Error, not os.Error.
-		if e.error != nil {
-			log.Print(e.error)
+		if e.err != nil {
+			log.Print(e.err)
 		}
 		data, err := marshal(e, true)
 		if err != nil {
