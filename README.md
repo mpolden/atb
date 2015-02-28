@@ -8,7 +8,7 @@ public API and converts the responses into a sane format.
 You can request access to the SOAP API provided by AtB
 [here](https://www.atb.no/aapne-data/category419.html) (Norwegian).
 
-The public JSON API should have the same format as [BusBuddy](https://github.com/norrs/busbuddy).
+The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy).
 
 ## Usage
 
@@ -27,7 +27,7 @@ Help Options:
 
 ## Example config
 
-```
+```json
 {
   "Username": "username",
   "Password": "password"
@@ -36,10 +36,14 @@ Help Options:
 
 ## API usage
 
-Get bus stops:
+The route `/api/v1/busstops` returns a list of all known bus stops. All routes
+support the parameter `?pretty` to return pretty-printed JSON.
 
-```
-$ curl 'http://localhost:8080/api/v1/busstops?pretty=true'
+Example:
+
+`$ curl 'http://localhost:8080/api/v1/busstops?pretty'`
+
+```json
 {
   "stops": [
     ...
@@ -57,10 +61,14 @@ $ curl 'http://localhost:8080/api/v1/busstops?pretty=true'
 }
 ```
 
-Get departures for a given bus stop:
+The route `/api/v1/departures` returns a list of departures for a given bus
+stop, identified by `nodeId`.
 
-```
-$ curl 'http://localhost:8080/api/v1/departures/16011376?pretty=true'
+Example:
+
+`$ curl 'http://localhost:8080/api/v1/departures/16011376?pretty'`
+
+```json
 {
   "isGoingTowardsCentrum": true,
   "departures": [
