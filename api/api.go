@@ -16,6 +16,12 @@ import (
 type Api struct {
 	Client atb.Client
 	cache  *cache.Cache
+	expiration
+}
+
+type expiration struct {
+	departures time.Duration
+	stops      time.Duration
 }
 
 func marshal(data interface{}, indent bool) ([]byte, error) {
@@ -49,7 +55,7 @@ func (a *Api) getBusStops() (BusStops, error) {
 	for _, s := range busStops.Stops {
 		busStops.nodeIds[s.NodeId] = struct{}{}
 	}
-	a.cache.Set(cacheKey, busStops, 168*time.Hour)
+	a.cache.Set(cacheKey, busStops, a.expiration.stops)
 	return busStops, nil
 }
 
@@ -150,11 +156,15 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	return nil
 }
 
-func New(client atb.Client) Api {
-	cache := cache.New(1*time.Minute, 30*time.Second)
+func New(client atb.Client, stopsExpiration, depExpiration time.Duration) Api {
+	cache := cache.New(depExpiration, 30*time.Second)
 	return Api{
 		Client: client,
 		cache:  cache,
+		expiration: expiration{
+			stops:      stopsExpiration,
+			departures: depExpiration,
+		},
 	}
 }
 
@@ -184,12 +194,11 @@ func requestFilter(next http.Handler) http.Handler {
 	})
 }
 
-func ListenAndServe(client atb.Client, addr string) error {
-	api := New(client)
+func (a *Api) ListenAndServe(addr string) error {
 	r := mux.NewRouter()
-	r.Handle("/api/v1/busstops", appHandler(api.BusStopsHandler))
+	r.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
 	r.Handle("/api/v1/departures/{nodeId:[0-9]+}",
-		appHandler(api.DeparturesHandler))
+		appHandler(a.DeparturesHandler))
 	http.Handle("/", requestFilter(r))
 	return http.ListenAndServe(addr, nil)
 }
