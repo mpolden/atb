@@ -82,32 +82,23 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 	return departures, nil
 }
 
-func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) *Error {
+func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	busStops, err := a.getBusStops()
 	if err != nil {
-		return &Error{
+		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "failed to get bus stops from atb",
 		}
 	}
-	jsonBlob, err := marshal(busStops, context.Get(req, "indent").(bool))
-	if err != nil {
-		return &Error{
-			err:     err,
-			Status:  http.StatusInternalServerError,
-			Message: "failed to marshal bus stops",
-		}
-	}
-	w.Write(jsonBlob)
-	return nil
+	return busStops, nil
 }
 
-func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error {
+func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	vars := mux.Vars(req)
 	nodeId, err := strconv.Atoi(vars["nodeId"])
 	if err != nil {
-		return &Error{
+		return nil, &Error{
 			err:     err,
 			Status:  http.StatusBadRequest,
 			Message: "missing or invalid nodeId",
@@ -115,7 +106,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	}
 	busStops, err := a.getBusStops()
 	if err != nil {
-		return &Error{
+		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "could not get bus stops from atb",
@@ -124,7 +115,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	_, knownBusStop := busStops.nodeIds[nodeId]
 	if !knownBusStop {
 		msg := fmt.Sprintf("bus stop with nodeId=%d not found", nodeId)
-		return &Error{
+		return nil, &Error{
 			err:     err,
 			Status:  http.StatusNotFound,
 			Message: msg,
@@ -132,26 +123,17 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) *Error
 	}
 	departures, err := a.getDepartures(nodeId)
 	if err != nil {
-		return &Error{
+		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
 			Message: "could not get departures from atb",
 		}
 	}
-	jsonBlob, err := marshal(departures, context.Get(req, "indent").(bool))
-	if err != nil {
-		return &Error{
-			err:     err,
-			Status:  http.StatusInternalServerError,
-			Message: "failed to marshal departures",
-		}
-	}
-	w.Write(jsonBlob)
-	return nil
+	return departures, nil
 }
 
-func (a *Api) NotFoundHandler(w http.ResponseWriter, req *http.Request) *Error {
-	return &Error{
+func (a *Api) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+	return nil, &Error{
 		err:     nil,
 		Status:  http.StatusNotFound,
 		Message: "route not found",
@@ -170,20 +152,28 @@ func New(client atb.Client, stopsExpiration, depExpiration time.Duration) Api {
 	}
 }
 
-type appHandler func(http.ResponseWriter, *http.Request) *Error
+type appHandler func(http.ResponseWriter, *http.Request) (interface{}, *Error)
 
 func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if e := fn(w, r); e != nil { // e is *Error, not os.Error.
+	data, e := fn(w, r)
+	if e != nil { // e is *Error, not os.Error.
 		if e.err != nil {
 			log.Print(e.err)
 		}
-		data, err := marshal(e, true)
+		jsonBlob, err := marshal(e, true)
 		if err != nil {
 			// Should never happen
 			panic(err)
 		}
 		w.WriteHeader(e.Status)
-		w.Write(data)
+		w.Write(jsonBlob)
+	} else {
+		indent := context.Get(r, "indent").(bool)
+		jsonBlob, err := marshal(data, indent)
+		if err != nil {
+			panic(err)
+		}
+		w.Write(jsonBlob)
 	}
 }
 
