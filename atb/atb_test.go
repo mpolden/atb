@@ -25,8 +25,8 @@ func TestGetBusStops(t *testing.T) {
 	expected := BusStops{
 		Stops: []BusStop{
 			BusStop{
-				StopId:      100633,
-				NodeId:      "16011376",
+				StopID:      100633,
+				NodeID:      "16011376",
 				Description: "Prof. Brochs gt",
 				Longitude:   "1157514",
 				Latitude:    9202874,
@@ -54,7 +54,7 @@ func TestGetRealTimeForecast(t *testing.T) {
 		Nodes: []NodeInfo{
 			NodeInfo{
 				Name:              "AtB",
-				NodeId:            "16011376",
+				NodeID:            "16011376",
 				NodeName:          "Prof.",
 				NodeDescription:   "Prof. Brochs gt",
 				BitMaskProperties: "0",
@@ -65,7 +65,7 @@ func TestGetRealTimeForecast(t *testing.T) {
 		},
 		Forecasts: []Forecast{
 			Forecast{
-				LineId:                  "6",
+				LineID:                  "6",
 				LineDescription:         "6",
 				RegisteredDepartureTime: "26.02.2015 18:38",
 				ScheduledDepartureTime:  "26.02.2015 18:01",

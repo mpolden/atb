@@ -20,15 +20,15 @@ func compileTemplate(t *template.Template, data interface{}) (string, error) {
 }
 
 type busStopsListMethod struct {
-	XMLName  xml.Name           `xml:"Envelope"`
-	Result   []byte             `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
-	template *template.Template `xml:"-"`
+	XMLName  xml.Name `xml:"Envelope"`
+	Result   []byte   `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
+	template *template.Template
 }
 
 type realTimeForecastMethod struct {
-	XMLName  xml.Name           `xml:"Envelope"`
-	Result   []byte             `xml:"Body>getUserRealTimeForecastByStopResponse>getUserRealTimeForecastByStopResult"`
-	template *template.Template `xml:"-"`
+	XMLName  xml.Name `xml:"Envelope"`
+	Result   []byte   `xml:"Body>getUserRealTimeForecastByStopResponse>getUserRealTimeForecastByStopResult"`
+	template *template.Template
 }
 
 func (m *busStopsListMethod) NewRequest(data interface{}) (string, error) {
@@ -82,7 +82,7 @@ var (
         <user>{{.Username}}</user>
         <password>{{.Password}}</password>
       </auth>
-      <busStopId>{{.NodeId}}</busStopId>
+      <busStopId>{{.NodeID}}</busStopId>
     </getUserRealTimeForecastByStop>
   </soap12:Body>
 </soap12:Envelope>`),

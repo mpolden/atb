@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type Api struct {
+type API struct {
 	Client atb.Client
 	cache  *cache.Cache
 	expiration
@@ -31,7 +31,7 @@ func marshal(data interface{}, indent bool) ([]byte, error) {
 	return json.Marshal(data)
 }
 
-func (a *Api) getBusStops() (BusStops, error) {
+func (a *API) getBusStops() (BusStops, error) {
 	const cacheKey = "stops"
 	cached, ok := a.cache.Get(cacheKey)
 	if ok {
@@ -51,16 +51,16 @@ func (a *Api) getBusStops() (BusStops, error) {
 		return BusStops{}, err
 	}
 	// Create a map of nodeIds
-	busStops.nodeIds = make(map[int]struct{}, len(busStops.Stops))
+	busStops.nodeIDs = make(map[int]struct{}, len(busStops.Stops))
 	for _, s := range busStops.Stops {
-		busStops.nodeIds[s.NodeId] = struct{}{}
+		busStops.nodeIDs[s.NodeID] = struct{}{}
 	}
 	a.cache.Set(cacheKey, busStops, a.expiration.stops)
 	return busStops, nil
 }
 
-func (a *Api) getDepartures(nodeId int) (Departures, error) {
-	cacheKey := strconv.Itoa(nodeId)
+func (a *API) getDepartures(nodeID int) (Departures, error) {
+	cacheKey := strconv.Itoa(nodeID)
 	cached, ok := a.cache.Get(cacheKey)
 	if ok {
 		cachedDepartures, ok := cached.(Departures)
@@ -70,7 +70,7 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 		}
 		return cachedDepartures, nil
 	}
-	forecasts, err := a.Client.GetRealTimeForecast(nodeId)
+	forecasts, err := a.Client.GetRealTimeForecast(nodeID)
 	if err != nil {
 		return Departures{}, err
 	}
@@ -82,7 +82,7 @@ func (a *Api) getDepartures(nodeId int) (Departures, error) {
 	return departures, nil
 }
 
-func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	busStops, err := a.getBusStops()
 	if err != nil {
 		return nil, &Error{
@@ -94,14 +94,14 @@ func (a *Api) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interfa
 	return busStops, nil
 }
 
-func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	vars := mux.Vars(req)
-	nodeId, err := strconv.Atoi(vars["nodeId"])
+	nodeID, err := strconv.Atoi(vars["nodeID"])
 	if err != nil {
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusBadRequest,
-			Message: "missing or invalid nodeId",
+			Message: "missing or invalid nodeID",
 		}
 	}
 	busStops, err := a.getBusStops()
@@ -112,16 +112,16 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 			Message: "could not get bus stops from atb",
 		}
 	}
-	_, knownBusStop := busStops.nodeIds[nodeId]
+	_, knownBusStop := busStops.nodeIDs[nodeID]
 	if !knownBusStop {
-		msg := fmt.Sprintf("bus stop with nodeId=%d not found", nodeId)
+		msg := fmt.Sprintf("bus stop with nodeID=%d not found", nodeID)
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusNotFound,
 			Message: msg,
 		}
 	}
-	departures, err := a.getDepartures(nodeId)
+	departures, err := a.getDepartures(nodeID)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -132,7 +132,7 @@ func (a *Api) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 	return departures, nil
 }
 
-func (a *Api) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+func (a *API) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	return nil, &Error{
 		err:     nil,
 		Status:  http.StatusNotFound,
@@ -140,9 +140,9 @@ func (a *Api) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interfa
 	}
 }
 
-func New(client atb.Client, stopsExpiration, depExpiration time.Duration) Api {
+func New(client atb.Client, stopsExpiration, depExpiration time.Duration) API {
 	cache := cache.New(depExpiration, 30*time.Second)
-	return Api{
+	return API{
 		Client: client,
 		cache:  cache,
 		expiration: expiration{
@@ -186,10 +186,10 @@ func requestFilter(next http.Handler) http.Handler {
 	})
 }
 
-func (a *Api) ListenAndServe(addr string) error {
+func (a *API) ListenAndServe(addr string) error {
 	r := mux.NewRouter()
 	r.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
-	r.Handle("/api/v1/departures/{nodeId:[0-9]+}",
+	r.Handle("/api/v1/departures/{nodeID:[0-9]+}",
 		appHandler(a.DeparturesHandler))
 	r.NotFoundHandler = appHandler(a.NotFoundHandler)
 	http.Handle("/", requestFilter(r))

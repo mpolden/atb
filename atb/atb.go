@@ -20,8 +20,8 @@ type BusStops struct {
 }
 
 type BusStop struct {
-	StopId      int    `json:"cinFermata"`
-	NodeId      string `json:"codAzNodo"`
+	StopID      int    `json:"cinFermata"`
+	NodeID      string `json:"codAzNodo"`
 	Description string `json:"descrizione"`
 	Longitude   string `json:"lon"`
 	Latitude    int    `json:"lat"`
@@ -37,7 +37,7 @@ type Forecasts struct {
 
 type NodeInfo struct {
 	Name              string `json:"nome_Az"`
-	NodeId            string `json:"codAzNodo"`
+	NodeID            string `json:"codAzNodo"`
 	NodeName          string `json:"nomeNodo"`
 	NodeDescription   string `json:"descrNodo"`
 	BitMaskProperties string `json:"bitMaskProprieta"`
@@ -47,7 +47,7 @@ type NodeInfo struct {
 }
 
 type Forecast struct {
-	LineId                  string `json:"codAzLinea"`
+	LineID                  string `json:"codAzLinea"`
 	LineDescription         string `json:"descrizioneLinea"`
 	RegisteredDepartureTime string `json:"orario"`
 	ScheduledDepartureTime  string `json:"orarioSched"`
@@ -110,12 +110,12 @@ func (c *Client) GetBusStops() (BusStops, error) {
 	return stops, nil
 }
 
-func (c *Client) GetRealTimeForecast(nodeId int) (Forecasts, error) {
+func (c *Client) GetRealTimeForecast(nodeID int) (Forecasts, error) {
 	values := struct {
 		Username string
 		Password string
-		NodeId   int
-	}{c.Username, c.Password, nodeId}
+		NodeID   int
+	}{c.Username, c.Password, nodeID}
 
 	jsonBlob, err := c.post(realTimeForecast, values)
 	if err != nil {

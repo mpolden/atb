@@ -61,7 +61,7 @@ func TestGetBusStops(t *testing.T) {
 	if len(busStops.Stops) != 1 {
 		t.Fatal("Expected length to be 1")
 	}
-	if len(busStops.nodeIds) != 1 {
+	if len(busStops.nodeIDs) != 1 {
 		t.Fatal("Expected length to be 1")
 	}
 }

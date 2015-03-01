@@ -8,8 +8,8 @@ import (
 
 func TestConvertBusStop(t *testing.T) {
 	stop := atb.BusStop{
-		StopId:      100633,
-		NodeId:      "16011376",
+		StopID:      100633,
+		NodeID:      "16011376",
 		Description: "Prof. Brochs gt",
 		Longitude:   "1157514",
 		Latitude:    9202874,
@@ -17,8 +17,8 @@ func TestConvertBusStop(t *testing.T) {
 		MobileName:  "Prof. (16011376)",
 	}
 	expected := BusStop{
-		StopId:      100633,
-		NodeId:      16011376,
+		StopID:      100633,
+		NodeID:      16011376,
 		Description: "Prof. Brochs gt",
 		Longitude:   1157514,
 		Latitude:    9202874,
@@ -37,13 +37,13 @@ func TestConvertBusStop(t *testing.T) {
 func TestConvertBusStops(t *testing.T) {
 	stops := atb.BusStops{
 		Stops: []atb.BusStop{atb.BusStop{
-			NodeId:    "16011376",
+			NodeID:    "16011376",
 			Longitude: "1157514",
 			Latitude:  9202874,
 		}}}
 	expected := BusStops{
 		Stops: []BusStop{BusStop{
-			NodeId:    16011376,
+			NodeID:    16011376,
 			Longitude: 1157514,
 			Latitude:  9202874,
 		}}}
@@ -63,7 +63,7 @@ func TestConvertTime(t *testing.T) {
 	}
 	expected := "2015-02-26T18:38:00.000"
 	if time != expected {
-		t.Fatalf("Expected %s, got %s")
+		t.Fatalf("Expected %s, got %s", expected, time)
 	}
 }
 
@@ -81,7 +81,7 @@ func TestIsRealtime(t *testing.T) {
 
 func TestConvertForecast(t *testing.T) {
 	forecast := atb.Forecast{
-		LineId:                  "6",
+		LineID:                  "6",
 		LineDescription:         "6",
 		RegisteredDepartureTime: "26.02.2015 18:38",
 		ScheduledDepartureTime:  "26.02.2015 18:01",
@@ -89,7 +89,7 @@ func TestConvertForecast(t *testing.T) {
 		Destination:             "Munkegata M5",
 	}
 	expected := Departure{
-		LineId:                  "6",
+		LineID:                  "6",
 		Destination:             "Munkegata M5",
 		RegisteredDepartureTime: "2015-02-26T18:38:00.000",
 		ScheduledDepartureTime:  "2015-02-26T18:01:00.000",
@@ -115,7 +115,7 @@ func TestIsTowardsCentrum(t *testing.T) {
 
 func TestConvertForecasts(t *testing.T) {
 	forecasts := atb.Forecasts{
-		Nodes: []atb.NodeInfo{atb.NodeInfo{NodeId: "16011376"}},
+		Nodes: []atb.NodeInfo{atb.NodeInfo{NodeID: "16011376"}},
 		Forecasts: []atb.Forecast{atb.Forecast{
 			RegisteredDepartureTime: "26.02.2015 18:38",
 			ScheduledDepartureTime:  "26.02.2015 18:01",

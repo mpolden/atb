@@ -9,12 +9,12 @@ import (
 
 type BusStops struct {
 	Stops   []BusStop `json:"stops"`
-	nodeIds map[int]struct{}
+	nodeIDs map[int]struct{}
 }
 
 type BusStop struct {
-	StopId      int    `json:"stopId"`
-	NodeId      int    `json:"nodeId"`
+	StopID      int    `json:"stopId"`
+	NodeID      int    `json:"nodeId"`
 	Description string `json:"description"`
 	Longitude   int    `json:"longitude"`
 	Latitude    int    `json:"latitude"`
@@ -28,7 +28,7 @@ type Departures struct {
 }
 
 type Departure struct {
-	LineId                  string `json:"line"`
+	LineID                  string `json:"line"`
 	RegisteredDepartureTime string `json:"registeredDepartureTime"`
 	ScheduledDepartureTime  string `json:"scheduledDepartureTime"`
 	Destination             string `json:"destination"`
@@ -36,13 +36,13 @@ type Departure struct {
 }
 
 type Error struct {
-	err     error  `json:"-"`
+	err     error
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 }
 
 func convertBusStop(s atb.BusStop) (BusStop, error) {
-	nodeId, err := strconv.Atoi(s.NodeId)
+	nodeID, err := strconv.Atoi(s.NodeID)
 	if err != nil {
 		return BusStop{}, err
 	}
@@ -51,8 +51,8 @@ func convertBusStop(s atb.BusStop) (BusStop, error) {
 		return BusStop{}, err
 	}
 	return BusStop{
-		StopId:      s.StopId,
-		NodeId:      nodeId,
+		StopID:      s.StopID,
+		NodeID:      nodeID,
 		Description: s.Description,
 		Longitude:   longitude,
 		Latitude:    s.Latitude,
@@ -95,7 +95,7 @@ func convertForecast(f atb.Forecast) (Departure, error) {
 		return Departure{}, err
 	}
 	return Departure{
-		LineId:                  f.LineId,
+		LineID:                  f.LineID,
 		Destination:             f.Destination,
 		RegisteredDepartureTime: registeredDeparture,
 		ScheduledDepartureTime:  scheduledDeparture,
@@ -103,18 +103,18 @@ func convertForecast(f atb.Forecast) (Departure, error) {
 	}, nil
 }
 
-func IsTowardsCentrum(nodeId int) bool {
-	return (nodeId/1000)%2 == 1
+func IsTowardsCentrum(nodeID int) bool {
+	return (nodeID/1000)%2 == 1
 }
 
 func convertForecasts(f atb.Forecasts) (Departures, error) {
 	towardsCentrum := false
 	if len(f.Nodes) > 0 {
-		nodeId, err := strconv.Atoi(f.Nodes[0].NodeId)
+		nodeID, err := strconv.Atoi(f.Nodes[0].NodeID)
 		if err != nil {
 			return Departures{}, err
 		}
-		towardsCentrum = IsTowardsCentrum(nodeId)
+		towardsCentrum = IsTowardsCentrum(nodeID)
 	}
 	departures := make([]Departure, 0, len(f.Forecasts))
 	for _, forecast := range f.Forecasts {
