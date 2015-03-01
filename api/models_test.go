@@ -20,8 +20,8 @@ func TestConvertBusStop(t *testing.T) {
 		StopID:      100633,
 		NodeID:      16011376,
 		Description: "Prof. Brochs gt",
-		Longitude:   1157514,
-		Latitude:    9202874,
+		Longitude:   10.398125177823237,
+		Latitude:    63.4155348940887,
 		MobileCode:  "16011376 (Prof.)",
 		MobileName:  "Prof. (16011376)",
 	}
@@ -44,8 +44,8 @@ func TestConvertBusStops(t *testing.T) {
 	expected := BusStops{
 		Stops: []BusStop{BusStop{
 			NodeID:    16011376,
-			Longitude: 1157514,
-			Latitude:  9202874,
+			Longitude: 10.398125177823237,
+			Latitude:  63.4155348940887,
 		}}}
 	actual, err := convertBusStops(stops)
 	if err != nil {
@@ -132,5 +132,27 @@ func TestConvertForecasts(t *testing.T) {
 	}
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Expected %+v, got %+v", expected, actual)
+	}
+}
+
+func TestConvertCoordinates(t *testing.T) {
+	// Prof. Brochs gate
+	latitude, longitude := 9202565, 1157522
+	lat, lon := ConvertCoordinates(latitude, longitude)
+	if expected := 63.41429265308724; lat != expected {
+		t.Fatalf("Expected %f, got %f", expected, lat)
+	}
+	if expected := 10.398197043045966; lon != expected {
+		t.Fatalf("Expected %f, got %f", expected, lon)
+	}
+
+	// Ilsvika
+	latitude, longitude = 9206756, 1152920
+	lat, lon = ConvertCoordinates(latitude, longitude)
+	if expected := 63.43113671582598; lat != expected {
+		t.Fatalf("Expected %f, got %f", expected, lat)
+	}
+	if expected := 10.356856573670786; lon != expected {
+		t.Fatalf("Expected %f, got %f", expected, lon)
 	}
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/martinp/atbapi/atb"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -15,13 +16,13 @@ type BusStops struct {
 
 // BusStop represents a single bus stop.
 type BusStop struct {
-	StopID      int    `json:"stopId"`
-	NodeID      int    `json:"nodeId"`
-	Description string `json:"description"`
-	Longitude   int    `json:"longitude"`
-	Latitude    int    `json:"latitude"`
-	MobileCode  string `json:"mobileCode"`
-	MobileName  string `json:"mobileName"`
+	StopID      int     `json:"stopId"`
+	NodeID      int     `json:"nodeId"`
+	Description string  `json:"description"`
+	Longitude   float64 `json:"longitude"`
+	Latitude    float64 `json:"latitude"`
+	MobileCode  string  `json:"mobileCode"`
+	MobileName  string  `json:"mobileName"`
 }
 
 // Departures represents a list of departures, from a given bus stop.
@@ -55,12 +56,13 @@ func convertBusStop(s atb.BusStop) (BusStop, error) {
 	if err != nil {
 		return BusStop{}, err
 	}
+	lat, lon := ConvertCoordinates(s.Latitude, longitude)
 	return BusStop{
 		StopID:      s.StopID,
 		NodeID:      nodeID,
 		Description: s.Description,
-		Longitude:   longitude,
-		Latitude:    s.Latitude,
+		Longitude:   lon,
+		Latitude:    lat,
 		MobileCode:  s.MobileCode,
 		MobileName:  s.MobileName,
 	}, nil
@@ -111,9 +113,24 @@ func convertForecast(f atb.Forecast) (Departure, error) {
 }
 
 // IsTowardsCentrum returns a boolean indicating whether a bus stop, identified
-// by nodeID, is going to the centrum
+// by nodeID, is going to the centrum.
 func IsTowardsCentrum(nodeID int) bool {
 	return (nodeID/1000)%2 == 1
+}
+
+// ConvertCoordinates converts latitude and longitude from EPSG:3785 to
+// EPSG:4326.
+func ConvertCoordinates(latitude, longitude int) (float64, float64) {
+	const earthRadius = 6378137
+
+	originShift := (2 * math.Pi * earthRadius) / 2
+
+	lat := (float64(latitude) / originShift) * 180
+	lon := (float64(longitude) / originShift) * 180
+
+	lat = 180 / math.Pi * (2*math.Atan(
+		math.Exp(lat*math.Pi/180)) - math.Pi/2)
+	return lat, lon
 }
 
 func convertForecasts(f atb.Forecasts) (Departures, error) {
