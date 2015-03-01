@@ -7,18 +7,22 @@ import (
 	"net/http"
 )
 
+// DefaultURL is the default AtB API URL.
 const DefaultURL = "http://st.atb.no/InfoTransit/userservices.asmx"
 
+// Client represents a client which communicates with AtBs API.
 type Client struct {
 	Username string
 	Password string
 	URL      string
 }
 
+// BusStops represents a list of bus stops.
 type BusStops struct {
 	Stops []BusStop `json:"Fermate"`
 }
 
+// BusStop represents a bus stop.
 type BusStop struct {
 	StopID      int    `json:"cinFermata"`
 	NodeID      string `json:"codAzNodo"`
@@ -29,12 +33,14 @@ type BusStop struct {
 	MobileName  string `json:"nomeMobile"`
 }
 
+// Forecasts represents a list of forecasts.
 type Forecasts struct {
 	Nodes     []NodeInfo `json:"InfoNodo"`
 	Forecasts []Forecast `json:"Orari"`
 	Total     int        `json:"total"`
 }
 
+// NodeInfo represents a bus stop, returned as a part of a forecast.
 type NodeInfo struct {
 	Name              string `json:"nome_Az"`
 	NodeID            string `json:"codAzNodo"`
@@ -46,6 +52,7 @@ type NodeInfo struct {
 	Latitude          string `json:"coordLat"`
 }
 
+// Forecast represents a single forecast.
 type Forecast struct {
 	LineID                  string `json:"codAzLinea"`
 	LineDescription         string `json:"descrizioneLinea"`
@@ -55,6 +62,7 @@ type Forecast struct {
 	Destination             string `json:"capDest"`
 }
 
+// NewFromConfig creates a new client where name is the path to the config file.
 func NewFromConfig(name string) (Client, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
@@ -92,6 +100,7 @@ func (c *Client) post(m method, data interface{}) ([]byte, error) {
 	return jsonBlob, nil
 }
 
+// GetBusStops retrieves bus stops from AtBs API.
 func (c *Client) GetBusStops() (BusStops, error) {
 	values := struct {
 		Username string
@@ -110,6 +119,8 @@ func (c *Client) GetBusStops() (BusStops, error) {
 	return stops, nil
 }
 
+// GetRealTimeForecast retrieves a forecast from AtBs API, using nodeID to
+// identify the bus stop.
 func (c *Client) GetRealTimeForecast(nodeID int) (Forecasts, error) {
 	values := struct {
 		Username string

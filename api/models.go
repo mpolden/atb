@@ -7,11 +7,13 @@ import (
 	"time"
 )
 
+// BusStops represents a list of bus stops.
 type BusStops struct {
 	Stops   []BusStop `json:"stops"`
 	nodeIDs map[int]struct{}
 }
 
+// BusStop represents a single bus stop.
 type BusStop struct {
 	StopID      int    `json:"stopId"`
 	NodeID      int    `json:"nodeId"`
@@ -22,11 +24,13 @@ type BusStop struct {
 	MobileName  string `json:"mobileName"`
 }
 
+// Departures represents a list of departures, from a given bus stop.
 type Departures struct {
 	TowardsCentrum bool        `json:"isGoingTowardsCentrum"`
 	Departures     []Departure `json:"departures"`
 }
 
+// Departure represents a single departure in a given direction.
 type Departure struct {
 	LineID                  string `json:"line"`
 	RegisteredDepartureTime string `json:"registeredDepartureTime"`
@@ -35,6 +39,7 @@ type Departure struct {
 	IsRealtimeData          bool   `json:"isRealtimeData"`
 }
 
+// Error represents an error in the API, which is returned to the user.
 type Error struct {
 	err     error
 	Status  int    `json:"status"`
@@ -73,6 +78,7 @@ func convertBusStops(s atb.BusStops) (BusStops, error) {
 	return BusStops{Stops: stops}, nil
 }
 
+// ConvertTime converts time from AtBs format to ISO 8601.
 func ConvertTime(src string) (string, error) {
 	t, err := time.Parse("02.01.2006 15:04", src)
 	if err != nil {
@@ -81,6 +87,7 @@ func ConvertTime(src string) (string, error) {
 	return t.Format("2006-01-02T15:04:05.000"), nil
 }
 
+// IsRealtime returns a boolean indicating whether stationForecast is realtime.
 func IsRealtime(stationForecast string) bool {
 	return strings.EqualFold(stationForecast, "prev")
 }
@@ -103,6 +110,8 @@ func convertForecast(f atb.Forecast) (Departure, error) {
 	}, nil
 }
 
+// IsTowardsCentrum returns a boolean indicating whether a bus stop, identified
+// by nodeID, is going to the centrum
 func IsTowardsCentrum(nodeID int) bool {
 	return (nodeID/1000)%2 == 1
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// An API defines parameters for running an API server.
 type API struct {
 	Client atb.Client
 	cache  *cache.Cache
@@ -82,6 +83,7 @@ func (a *API) getDepartures(nodeID int) (Departures, error) {
 	return departures, nil
 }
 
+// BusStopsHandler is a handler for retrieving bus stops.
 func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	busStops, err := a.getBusStops()
 	if err != nil {
@@ -94,6 +96,7 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interfa
 	return busStops, nil
 }
 
+// DeparturesHandler is a handler for retrieving departures.
 func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	vars := mux.Vars(req)
 	nodeID, err := strconv.Atoi(vars["nodeID"])
@@ -132,6 +135,7 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 	return departures, nil
 }
 
+// NotFoundHandler handles requests to invalid routes.
 func (a *API) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	return nil, &Error{
 		err:     nil,
@@ -140,6 +144,9 @@ func (a *API) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interfa
 	}
 }
 
+// New returns an new API using client to communicate with AtB. stopsExpiration
+// and depExpiration control the cache expiration times for bus stops and
+// departures.
 func New(client atb.Client, stopsExpiration, depExpiration time.Duration) API {
 	cache := cache.New(depExpiration, 30*time.Second)
 	return API{
@@ -186,6 +193,8 @@ func requestFilter(next http.Handler) http.Handler {
 	})
 }
 
+// ListenAndServe listens on the TCP network address addr and starts serving the
+// API.
 func (a *API) ListenAndServe(addr string) error {
 	r := mux.NewRouter()
 	r.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
