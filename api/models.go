@@ -11,7 +11,7 @@ import (
 // BusStops represents a list of bus stops.
 type BusStops struct {
 	Stops   []BusStop `json:"stops"`
-	nodeIDs map[int]struct{}
+	nodeIDs map[int]*BusStop
 }
 
 // BusStop represents a single bus stop.

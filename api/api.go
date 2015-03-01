@@ -52,9 +52,10 @@ func (a *API) getBusStops() (BusStops, error) {
 		return BusStops{}, err
 	}
 	// Create a map of nodeIds
-	busStops.nodeIDs = make(map[int]struct{}, len(busStops.Stops))
-	for _, s := range busStops.Stops {
-		busStops.nodeIDs[s.NodeID] = struct{}{}
+	busStops.nodeIDs = make(map[int]*BusStop, len(busStops.Stops))
+	for i, s := range busStops.Stops {
+		// Store a pointer to the BusStop struct
+		busStops.nodeIDs[s.NodeID] = &busStops.Stops[i]
 	}
 	a.cache.Set(cacheKey, busStops, a.expiration.stops)
 	return busStops, nil
@@ -94,6 +95,37 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interfa
 		}
 	}
 	return busStops, nil
+}
+
+// BusStopHandler is a handler for retrieving info about a bus stop.
+func (a *API) BusStopHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+	vars := mux.Vars(req)
+	nodeID, err := strconv.Atoi(vars["nodeID"])
+	if err != nil {
+		return nil, &Error{
+			err:     err,
+			Status:  http.StatusBadRequest,
+			Message: "missing or invalid nodeID",
+		}
+	}
+	busStops, err := a.getBusStops()
+	if err != nil {
+		return nil, &Error{
+			err:     err,
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get bus stops from atb",
+		}
+	}
+	busStop, ok := busStops.nodeIDs[nodeID]
+	if !ok {
+		msg := fmt.Sprintf("bus stop with nodeID=%d not found", nodeID)
+		return nil, &Error{
+			err:     err,
+			Status:  http.StatusNotFound,
+			Message: msg,
+		}
+	}
+	return busStop, nil
 }
 
 // DeparturesHandler is a handler for retrieving departures.
@@ -198,6 +230,7 @@ func requestFilter(next http.Handler) http.Handler {
 func (a *API) ListenAndServe(addr string) error {
 	r := mux.NewRouter()
 	r.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
+	r.Handle("/api/v1/busstops/{nodeID:[0-9]+}", appHandler(a.BusStopHandler))
 	r.Handle("/api/v1/departures/{nodeID:[0-9]+}",
 		appHandler(a.DeparturesHandler))
 	r.NotFoundHandler = appHandler(a.NotFoundHandler)
