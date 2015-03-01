@@ -1,9 +1,21 @@
 NAME=atbapi
 
-all: deps install
+all: deps test lint install
 
 deps:
+	go get golang.org/x/tools/cmd/vet
+	go get github.com/golang/lint/golint
 	go get -d -v
+
+fmt:
+	go fmt ./...
+
+lint:
+	go vet ./...
+	golint ./...
+
+test:
+	go test ./...
 
 install:
 	go install
