@@ -55,8 +55,8 @@ $ curl 'http://localhost:8080/api/v1/busstops?pretty'
       "stopId": 100633,
       "nodeId": 16011376,
       "description": "Prof. Brochs gt",
-      "longitude": 1157514,
-      "latitude": 9202874,
+      "longitude": 10.398125177823237,
+      "latitude": 63.4155348940887,
       "mobileCode": "16011376 (Prof.)",
       "mobileName": "Prof. (16011376)"
     },
