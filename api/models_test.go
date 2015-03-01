@@ -20,8 +20,8 @@ func TestConvertBusStop(t *testing.T) {
 		StopID:      100633,
 		NodeID:      16011376,
 		Description: "Prof. Brochs gt",
-		Longitude:   10.398125177823237,
-		Latitude:    63.4155348940887,
+		Longitude:   10.398126,
+		Latitude:    63.415535,
 		MobileCode:  "16011376 (Prof.)",
 		MobileName:  "Prof. (16011376)",
 	}
@@ -44,8 +44,8 @@ func TestConvertBusStops(t *testing.T) {
 	expected := BusStops{
 		Stops: []BusStop{BusStop{
 			NodeID:    16011376,
-			Longitude: 10.398125177823237,
-			Latitude:  63.4155348940887,
+			Longitude: 10.398126,
+			Latitude:  63.415535,
 		}}}
 	actual, err := convertBusStops(stops)
 	if err != nil {
@@ -154,5 +154,18 @@ func TestConvertCoordinates(t *testing.T) {
 	}
 	if expected := 10.356856573670786; lon != expected {
 		t.Fatalf("Expected %f, got %f", expected, lon)
+	}
+}
+
+func TestCeilN(t *testing.T) {
+	expected := 1.234567
+	actual := ceilN(1.2345661, 6)
+	if actual != expected {
+		t.Fatalf("Expected %f, got %f", expected, actual)
+	}
+	expected = 1.234567
+	actual = ceilN(1.2345665, 6)
+	if actual != expected {
+		t.Fatalf("Expected %f, got %f", expected, actual)
 	}
 }

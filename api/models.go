@@ -61,8 +61,8 @@ func convertBusStop(s atb.BusStop) (BusStop, error) {
 		StopID:      s.StopID,
 		NodeID:      nodeID,
 		Description: s.Description,
-		Longitude:   lon,
-		Latitude:    lat,
+		Longitude:   ceilN(lon, 6),
+		Latitude:    ceilN(lat, 6),
 		MobileCode:  s.MobileCode,
 		MobileName:  s.MobileName,
 	}, nil
@@ -131,6 +131,11 @@ func ConvertCoordinates(latitude, longitude int) (float64, float64) {
 	lat = 180 / math.Pi * (2*math.Atan(
 		math.Exp(lat*math.Pi/180)) - math.Pi/2)
 	return lat, lon
+}
+
+func ceilN(f float64, n int) float64 {
+	shift := math.Pow(10, float64(n))
+	return math.Ceil(f*shift) / shift
 }
 
 func convertForecasts(f atb.Forecasts) (Departures, error) {
