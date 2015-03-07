@@ -125,6 +125,10 @@ func (a *API) BusStopHandler(w http.ResponseWriter, req *http.Request) (interfac
 			Message: msg,
 		}
 	}
+	_, geojson := req.URL.Query()["geojson"]
+	if geojson {
+		return busStop.GeoJSON(), nil
+	}
 	return busStop, nil
 }
 

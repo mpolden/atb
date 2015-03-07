@@ -25,6 +25,19 @@ type BusStop struct {
 	MobileName  string  `json:"mobileName"`
 }
 
+// GeoJSON represents the top-level object of the GeoJSON format
+type GeoJSON struct {
+	Type       string `json:"type"`
+	Geometry   `json:"geometry"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+// Geometry represents the geometry object of the GeoJSON format
+type Geometry struct {
+	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates"`
+}
+
 // Departures represents a list of departures, from a given bus stop.
 type Departures struct {
 	TowardsCentrum bool        `json:"isGoingTowardsCentrum"`
@@ -159,4 +172,21 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 		TowardsCentrum: towardsCentrum,
 		Departures:     departures,
 	}, nil
+}
+
+// GeoJSON converts BusStop into the GeoJSON format
+func (s *BusStop) GeoJSON() GeoJSON {
+	geometry := Geometry{
+		Type:        "Point",
+		Coordinates: []float64{s.Longitude, s.Latitude},
+	}
+	properties := map[string]interface{}{
+		"name":    s.Description,
+		"busstop": s,
+	}
+	return GeoJSON{
+		Type:       "Feature",
+		Geometry:   geometry,
+		Properties: properties,
+	}
 }
