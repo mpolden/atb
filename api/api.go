@@ -16,6 +16,7 @@ import (
 // An API defines parameters for running an API server.
 type API struct {
 	Client atb.Client
+	CORS   bool
 	cache  *cache.Cache
 	expiration
 }
@@ -187,10 +188,11 @@ func (a *API) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interfa
 // New returns an new API using client to communicate with AtB. stopsExpiration
 // and depExpiration control the cache expiration times for bus stops and
 // departures.
-func New(client atb.Client, stopsExpiration, depExpiration time.Duration) API {
+func New(client atb.Client, stopsExpiration, depExpiration time.Duration, cors bool) API {
 	cache := cache.New(depExpiration, 30*time.Second)
 	return API{
 		Client: client,
+		CORS:   cors,
 		cache:  cache,
 		expiration: expiration{
 			stops:      stopsExpiration,
@@ -224,11 +226,15 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func requestFilter(next http.Handler) http.Handler {
+func requestFilter(next http.Handler, cors bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, indent := r.URL.Query()["pretty"]
 		context.Set(r, "indent", indent)
 		w.Header().Set("Content-Type", "application/json")
+		if cors {
+			w.Header().Set("Access-Control-Allow-Methods", "GET")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -242,6 +248,6 @@ func (a *API) ListenAndServe(addr string) error {
 	r.Handle("/api/v1/departures/{nodeID:[0-9]+}",
 		appHandler(a.DeparturesHandler))
 	r.NotFoundHandler = appHandler(a.NotFoundHandler)
-	http.Handle("/", requestFilter(r))
+	http.Handle("/", requestFilter(r, a.CORS))
 	return http.ListenAndServe(addr, nil)
 }

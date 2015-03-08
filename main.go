@@ -15,6 +15,7 @@ func main() {
 		Config          string        `short:"c" long:"config" description:"Path to config file" value-name:"FILE" default:"config.json"`
 		CacheStops      time.Duration `short:"s" long:"cache-stops" description:"Bus stops cache duration" value-name:"DURATION" default:"168h"`
 		CacheDepartures time.Duration `short:"d" long:"cache-departures" description:"Departures cache duration" value-name:"DURATION" default:"1m"`
+		CORS            bool          `short:"x" long:"cors" description:"Allow requests from other domains" default:"false"`
 	}
 	_, err := flags.ParseArgs(&opts, os.Args)
 	if err != nil {
@@ -26,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	api := api.New(client, opts.CacheStops, opts.CacheDepartures)
+	api := api.New(client, opts.CacheStops, opts.CacheDepartures, opts.CORS)
 
 	log.Printf("Listening on %s", opts.Listen)
 	if err := api.ListenAndServe(opts.Listen); err != nil {
