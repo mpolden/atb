@@ -32,13 +32,13 @@ type GeoJSON struct {
 	Properties map[string]interface{} `json:"properties"`
 }
 
-// Geometry represents the geometry object of the GeoJSON format
+// Geometry represents the geometry object of the GeoJSON format.
 type Geometry struct {
 	Type        string    `json:"type"`
 	Coordinates []float64 `json:"coordinates"`
 }
 
-// GeoJSONCollection represents a collection of GeoJSON feature objects
+// GeoJSONCollection represents a collection of GeoJSON feature objects.
 type GeoJSONCollection struct {
 	Type     string    `json:"type"`
 	Features []GeoJSON `json:"features"`
@@ -180,7 +180,7 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 	}, nil
 }
 
-// GeoJSON converts BusStop into the GeoJSON format
+// GeoJSON converts BusStop into the GeoJSON format.
 func (s *BusStop) GeoJSON() GeoJSON {
 	geometry := Geometry{
 		Type:        "Point",
@@ -197,9 +197,10 @@ func (s *BusStop) GeoJSON() GeoJSON {
 	}
 }
 
+// GeoJSON converts BusStops into a GeoJSON feature collection.
 func (s *BusStops) GeoJSON() GeoJSONCollection {
 	features := make([]GeoJSON, 0, len(s.Stops))
-	for i, _ := range s.Stops {
+	for i := range s.Stops {
 		geoJSON := s.Stops[i].GeoJSON()
 		features = append(features, geoJSON)
 	}
