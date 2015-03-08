@@ -38,6 +38,12 @@ type Geometry struct {
 	Coordinates []float64 `json:"coordinates"`
 }
 
+// GeoJSONCollection represents a collection of GeoJSON feature objects
+type GeoJSONCollection struct {
+	Type     string    `json:"type"`
+	Features []GeoJSON `json:"features"`
+}
+
 // Departures represents a list of departures, from a given bus stop.
 type Departures struct {
 	TowardsCentrum bool        `json:"isGoingTowardsCentrum"`
@@ -188,5 +194,17 @@ func (s *BusStop) GeoJSON() GeoJSON {
 		Type:       "Feature",
 		Geometry:   geometry,
 		Properties: properties,
+	}
+}
+
+func (s *BusStops) GeoJSON() GeoJSONCollection {
+	features := make([]GeoJSON, 0, len(s.Stops))
+	for i, _ := range s.Stops {
+		geoJSON := s.Stops[i].GeoJSON()
+		features = append(features, geoJSON)
+	}
+	return GeoJSONCollection{
+		Type:     "FeatureCollection",
+		Features: features,
 	}
 }

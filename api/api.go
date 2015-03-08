@@ -94,6 +94,10 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interfa
 			Message: "failed to get bus stops from atb",
 		}
 	}
+	_, geojson := req.URL.Query()["geojson"]
+	if geojson {
+		return busStops.GeoJSON(), nil
+	}
 	return busStops, nil
 }
 
