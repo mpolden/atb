@@ -25,6 +25,7 @@ Application Options:
   -c, --config=FILE                  Path to config file (config.json)
   -s, --cache-stops=DURATION         Bus stops cache duration (168h)
   -d, --cache-departures=DURATION    Departures cache duration (1m)
+  -x, --cors                         Allow requests from other domains (false)
 
 Help Options:
   -h, --help                         Show this help message
@@ -83,7 +84,7 @@ $ curl 'http://localhost:8080/api/v1/busstops/16011376?pretty'
 }
 ```
 
-GeoJSON:
+As [GeoJSON](http://geojson.org/):
 
 ```
 $ curl 'http://localhost:8080/api/v1/busstops/16011376?pretty&geojson'
