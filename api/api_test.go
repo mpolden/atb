@@ -2,11 +2,12 @@ package api
 
 import (
 	"fmt"
-	"github.com/martinp/atbapi/atb"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/martinp/atbapi/atb"
 )
 
 func TestMarshal(t *testing.T) {
@@ -46,7 +47,7 @@ func TestGetBusStops(t *testing.T) {
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, err := api.getBusStops()
+	_, _, err := api.getBusStops()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,12 +67,33 @@ func TestGetBusStops(t *testing.T) {
 	}
 }
 
+func TestGetBusStopsCache(t *testing.T) {
+	server := newTestServer("/", busStopsResponse)
+	defer server.Close()
+	atb := atb.Client{URL: server.URL}
+	api := New(atb, 168*time.Hour, 1*time.Minute, false)
+	_, hit, err := api.getBusStops()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hit {
+		t.Error("Expected false")
+	}
+	_, hit, err = api.getBusStops()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hit {
+		t.Error("Expected true")
+	}
+}
+
 func TestGetDepartures(t *testing.T) {
 	server := newTestServer("/", forecastResponse)
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, err := api.getDepartures(16011376)
+	_, _, err := api.getDepartures(16011376)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,6 +107,27 @@ func TestGetDepartures(t *testing.T) {
 	}
 	if len(departures.Departures) != 1 {
 		t.Fatal("Expected length to be 1")
+	}
+}
+
+func TestGetDeparturesCache(t *testing.T) {
+	server := newTestServer("/", forecastResponse)
+	defer server.Close()
+	atb := atb.Client{URL: server.URL}
+	api := New(atb, 168*time.Hour, 1*time.Minute, false)
+	_, hit, err := api.getDepartures(16011376)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hit {
+		t.Error("Expected false")
+	}
+	_, hit, err = api.getDepartures(16011376)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hit {
+		t.Error("Expected true")
 	}
 }
 
