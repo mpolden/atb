@@ -8,7 +8,7 @@ import (
 )
 
 // DefaultURL is the default AtB API URL.
-const DefaultURL = "http://st.atb.no/InfoTransit/userservices.asmx"
+const DefaultURL = "http://st.atb.no/New/InfoTransit/UserServices.asmx"
 
 // Client represents a client which communicates with AtBs API.
 type Client struct {
