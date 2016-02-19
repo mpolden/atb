@@ -1,6 +1,6 @@
 # atbapi
 
-[![Build Status](https://travis-ci.org/martinp/atbapi.png)](https://travis-ci.org/martinp/atbapi)
+[![Build Status](https://travis-ci.org/martinp/atbapi.svg)](https://travis-ci.org/martinp/atbapi)
 
 A minimal JSON API for bus data in Trondheim, Norway. This API proxies requests
 to the AtB public API and converts the responses into a sane format.
