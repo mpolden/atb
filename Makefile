@@ -1,22 +1,22 @@
-NAME=atbapi
-
-all: deps test lint install
-
-deps:
-	go get -d -v
+all: deps test vet lint install
 
 fmt:
 	go fmt ./...
 
-lint:
-	./lint.sh
-
 test:
 	go test ./...
 
+vet:
+	go vet ./...
+
+lint:
+	golint 2> /dev/null; if [ $$? -eq 127 ]; then \
+		go get -v github.com/golang/lint/golint; \
+	fi
+	golint ./...
+
+deps:
+	go get -d -v ./...
+
 install:
 	go install
-
-docker-build:
-	docker run --rm -v $(PWD):/usr/src/$(NAME) -w /usr/src/$(NAME) \
-		golang:latest /bin/sh -c 'go get -d -v && go build -v'
