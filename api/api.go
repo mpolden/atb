@@ -8,7 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/context"
+	"context"
+
 	"github.com/gorilla/mux"
 	"github.com/martinp/atbapi/atb"
 	cache "github.com/pmylund/go-cache"
@@ -230,7 +231,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(e.Status)
 		w.Write(jsonBlob)
 	} else {
-		indent := context.Get(r, "indent").(bool)
+		indent := r.Context().Value("indent").(bool)
 		jsonBlob, err := marshal(data, indent)
 		if err != nil {
 			panic(err)
@@ -242,7 +243,8 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func requestFilter(next http.Handler, cors bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, indent := r.URL.Query()["pretty"]
-		context.Set(r, "indent", indent)
+		ctx := context.Background()
+		r = r.WithContext(context.WithValue(ctx, "indent", indent))
 		w.Header().Set("Content-Type", "application/json")
 		if cors {
 			w.Header().Set("Access-Control-Allow-Methods", "GET")
