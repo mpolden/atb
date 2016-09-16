@@ -2,16 +2,19 @@
 
 [![Build Status](https://travis-ci.org/martinp/atbapi.svg)](https://travis-ci.org/martinp/atbapi)
 
-A minimal JSON API for bus data in Trondheim, Norway. This API proxies requests
-to the AtB public API and converts the responses into a sane format.
+A minimal API for bus data in Trondheim, Norway. This API proxies requests to
+the AtB public API and converts the responses into a sane JSON format.
 
 Responses from AtBs public API are cached. By default bus stops will be cached
 for 1 week and departures for 1 minute.
 
-You can request access to the SOAP API provided by AtB
-[here](https://www.atb.no/aapne-data/category419.html) (Norwegian).
+If you want to setup this service yourself, you need to request access to the
+SOAP API provided by AtB [here](https://www.atb.no/aapne-data/category419.html)
+(Norwegian). When granted access, you'll receive a username and password (see
+config example below).
 
-The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy).
+The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy)
+(which appears to be defunct).
 
 ## Usage
 
@@ -48,7 +51,7 @@ support the parameter `?pretty` to return pretty-printed JSON.
 Example:
 
 ```
-$ curl 'http://localhost:8080/api/v1/busstops?pretty'
+$ curl 'https://atbapi.tar.io/api/v1/busstops?pretty'
 {
   "stops": [
     ...
@@ -72,7 +75,7 @@ stop, identified by a node ID.
 Example:
 
 ```
-$ curl 'http://localhost:8080/api/v1/busstops/16011376?pretty'
+$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?pretty'
 {
   "stopId": 100633,
   "nodeId": 16011376,
@@ -87,7 +90,7 @@ $ curl 'http://localhost:8080/api/v1/busstops/16011376?pretty'
 As [GeoJSON](http://geojson.org/):
 
 ```
-$ curl 'http://localhost:8080/api/v1/busstops/16011376?pretty&geojson'
+$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?pretty&geojson'
 {
   "type": "Feature",
   "geometry": {
@@ -118,7 +121,7 @@ stop, identified by a node ID.
 Example:
 
 ```
-$ curl 'http://localhost:8080/api/v1/departures/16011376?pretty'
+$ curl 'https://atbapi.tar.io/api/v1/departures/16011376?pretty'
 {
   "isGoingTowardsCentrum": true,
   "departures": [
