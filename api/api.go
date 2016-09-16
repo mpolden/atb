@@ -190,6 +190,17 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 	return departures, nil
 }
 
+// RootHandler lists known routes
+func (a *API) RootHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+	return Root{
+		KnownRoutes: []Route{
+			{Method: "GET", Path: "/api/v1/busstops", Description: "All known bus stops"},
+			{Method: "GET", Path: "/api/v1/busstops/<node-id>", Description: "Information about the given bus stop"},
+			{Method: "GET", Path: "/api/v1/departures/<node-id>", Description: "Departures for the given bus stop"},
+		},
+	}, nil
+}
+
 // NotFoundHandler handles requests to invalid routes.
 func (a *API) NotFoundHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	return nil, &Error{
@@ -262,6 +273,7 @@ func (a *API) ListenAndServe(addr string) error {
 	r.Handle("/api/v1/busstops/{nodeID:[0-9]+}", appHandler(a.BusStopHandler))
 	r.Handle("/api/v1/departures/{nodeID:[0-9]+}",
 		appHandler(a.DeparturesHandler))
+	r.Handle("/", appHandler(a.RootHandler))
 	r.NotFoundHandler = appHandler(a.NotFoundHandler)
 	http.Handle("/", requestFilter(r, a.CORS))
 	return http.ListenAndServe(addr, nil)

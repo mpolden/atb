@@ -1,12 +1,25 @@
 package api
 
 import (
-	"github.com/martinp/atbapi/atb"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/martinp/atbapi/atb"
 )
+
+// Root is a collection of known API routes
+type Root struct {
+	KnownRoutes []Route `json:"knownRoutes"`
+}
+
+// Route represents a valid API route
+type Route struct {
+	Method      string `json:"method"`
+	Path        string `json:"path"`
+	Description string `json:"description"`
+}
 
 // BusStops represents a list of bus stops.
 type BusStops struct {
