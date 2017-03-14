@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/martinp/atbapi/atb"
+	"github.com/mpolden/atbapi/atb"
 )
 
 // Root is a collection of known API routes

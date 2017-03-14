@@ -6,8 +6,8 @@ import (
 	"time"
 
 	flags "github.com/jessevdk/go-flags"
-	"github.com/martinp/atbapi/api"
-	"github.com/martinp/atbapi/atb"
+	"github.com/mpolden/atbapi/api"
+	"github.com/mpolden/atbapi/atb"
 )
 
 func main() {

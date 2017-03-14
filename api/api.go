@@ -11,7 +11,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
-	"github.com/martinp/atbapi/atb"
+	"github.com/mpolden/atbapi/atb"
 	cache "github.com/pmylund/go-cache"
 )
 

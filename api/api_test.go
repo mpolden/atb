@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martinp/atbapi/atb"
+	"github.com/mpolden/atbapi/atb"
 )
 
 func TestMarshal(t *testing.T) {

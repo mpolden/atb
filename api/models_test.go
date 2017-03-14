@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/martinp/atbapi/atb"
 	"reflect"
 	"testing"
+
+	"github.com/mpolden/atbapi/atb"
 )
 
 func TestConvertBusStop(t *testing.T) {
