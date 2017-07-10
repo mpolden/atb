@@ -35,7 +35,7 @@ func TestGetBusStops(t *testing.T) {
 			},
 		},
 	}
-	stops, err := atb.GetBusStops()
+	stops, err := atb.BusStops()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestGetRealTimeForecast(t *testing.T) {
 	server := newTestServer("/", forecastResponse)
 	defer server.Close()
 	atb := Client{URL: server.URL}
-	forecasts, err := atb.GetRealTimeForecast(16011376)
+	forecasts, err := atb.Forecasts(16011376)
 	expected := Forecasts{
 		Total: 1,
 		Nodes: []NodeInfo{

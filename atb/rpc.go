@@ -8,7 +8,7 @@ import (
 
 type method interface {
 	NewRequest(data interface{}) (string, error)
-	ParseResponse(body []byte) ([]byte, error)
+	Unmarshal(b []byte) ([]byte, error)
 }
 
 func compileTemplate(t *template.Template, data interface{}) (string, error) {
@@ -35,7 +35,7 @@ func (m *busStopsListMethod) NewRequest(data interface{}) (string, error) {
 	return compileTemplate(m.template, data)
 }
 
-func (m *busStopsListMethod) ParseResponse(body []byte) ([]byte, error) {
+func (m *busStopsListMethod) Unmarshal(body []byte) ([]byte, error) {
 	var stops busStopsListMethod
 	if err := xml.Unmarshal(body, &stops); err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (m *realTimeForecastMethod) NewRequest(data interface{}) (string, error) {
 	return compileTemplate(m.template, data)
 }
 
-func (m *realTimeForecastMethod) ParseResponse(body []byte) ([]byte, error) {
+func (m *realTimeForecastMethod) Unmarshal(body []byte) ([]byte, error) {
 	var forecast realTimeForecastMethod
 	if err := xml.Unmarshal(body, &forecast); err != nil {
 		return nil, err

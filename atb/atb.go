@@ -93,48 +93,47 @@ func (c *Client) post(m method, data interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	jsonBlob, err := m.ParseResponse(body)
+	out, err := m.Unmarshal(body)
 	if err != nil {
 		return nil, err
 	}
-	return jsonBlob, nil
+	return out, nil
 }
 
-// GetBusStops retrieves bus stops from AtBs API.
-func (c *Client) GetBusStops() (BusStops, error) {
+// BusStops retrieves bus stops from AtBs API.
+func (c *Client) BusStops() (BusStops, error) {
 	values := struct {
 		Username string
 		Password string
 	}{c.Username, c.Password}
 
-	jsonBlob, err := c.post(busStopsList, values)
+	res, err := c.post(busStopsList, values)
 	if err != nil {
 		return BusStops{}, err
 	}
 
 	var stops BusStops
-	if err := json.Unmarshal(jsonBlob, &stops); err != nil {
+	if err := json.Unmarshal(res, &stops); err != nil {
 		return BusStops{}, err
 	}
 	return stops, nil
 }
 
-// GetRealTimeForecast retrieves a forecast from AtBs API, using nodeID to
-// identify the bus stop.
-func (c *Client) GetRealTimeForecast(nodeID int) (Forecasts, error) {
+// Forecasts retrieves forecasts from AtBs API, using nodeID to identify the bus stop.
+func (c *Client) Forecasts(nodeID int) (Forecasts, error) {
 	values := struct {
 		Username string
 		Password string
 		NodeID   int
 	}{c.Username, c.Password, nodeID}
 
-	jsonBlob, err := c.post(realTimeForecast, values)
+	res, err := c.post(realTimeForecast, values)
 	if err != nil {
 		return Forecasts{}, err
 	}
 
 	var forecasts Forecasts
-	if err := json.Unmarshal(jsonBlob, &forecasts); err != nil {
+	if err := json.Unmarshal(res, &forecasts); err != nil {
 		return Forecasts{}, err
 	}
 	return forecasts, nil

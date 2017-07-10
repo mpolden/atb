@@ -67,7 +67,7 @@ func TestAPI(t *testing.T) {
 		status   int
 	}{
 		// Unknown resources
-		{"/not-found", `{"status":404,"message":"route not found"}`, 404},
+		{"/not-found", `{"status":404,"message":"Resource not found"}`, 404},
 		// List know URLs
 		{"/", fmt.Sprintf(`{"urls":["%s/api/v1/busstops","%s/api/v1/departures"]}`, server.URL, server.URL), 200},
 		// List all bus stops
@@ -75,14 +75,14 @@ func TestAPI(t *testing.T) {
 		// List all departures
 		{"/api/v1/departures", fmt.Sprintf(`{"urls":["%s/api/v1/departures/16011376"]}`, server.URL), 200},
 		// Show specific bus stop
-		{"/api/v1/busstops/", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
-		{"/api/v1/busstops/foo", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
-		{"/api/v1/busstops/42", `{"status":404,"message":"bus stop with nodeID=42 not found"}`, 404},
+		{"/api/v1/busstops/", `{"status":400,"message":"Invalid nodeID"}`, 400},
+		{"/api/v1/busstops/foo", `{"status":400,"message":"Invalid nodeID"}`, 400},
+		{"/api/v1/busstops/42", `{"status":404,"message":"Unknown bus stop"}`, 404},
 		{"/api/v1/busstops/16011376", fmt.Sprintf(`{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}`, server.URL), 200},
 		// Show specific departure
-		{"/api/v1/departures/", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
-		{"/api/v1/departures/foo", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
-		{"/api/v1/departures/42", `{"status":404,"message":"bus stop with nodeID=42 not found"}`, 404},
+		{"/api/v1/departures/", `{"status":400,"message":"Invalid nodeID"}`, 400},
+		{"/api/v1/departures/foo", `{"status":400,"message":"Invalid nodeID"}`, 400},
+		{"/api/v1/departures/42", `{"status":404,"message":"Unknown bus stop"}`, 404},
 		{"/api/v1/departures/16011376", fmt.Sprintf(`{"url":"%s/api/v1/departures/16011376","isGoingTowardsCentrum":true,"departures":[{"line":"6","registeredDepartureTime":"2015-02-26T18:38:00.000","scheduledDepartureTime":"2015-02-26T18:01:00.000","destination":"Munkegata M5","isRealtimeData":true}]}`, server.URL), 200},
 	}
 	for _, tt := range tests {

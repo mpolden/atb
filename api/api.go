@@ -14,15 +14,15 @@ import (
 	cache "github.com/pmylund/go-cache"
 )
 
-// An API defines parameters for running an API server.
+// API defines parameters for running an API server.
 type API struct {
 	Client atb.Client
 	CORS   bool
 	cache  *cache.Cache
-	expiration
+	ttl
 }
 
-type expiration struct {
+type ttl struct {
 	departures time.Duration
 	stops      time.Duration
 }
@@ -48,14 +48,9 @@ func (a *API) getBusStops(urlPrefix string) (BusStops, bool, error) {
 	const cacheKey = "stops"
 	cached, hit := a.cache.Get(cacheKey)
 	if hit {
-		cachedBusStops, ok := cached.(BusStops)
-		if !ok {
-			return BusStops{}, false, fmt.Errorf(
-				"type assertion of cached value failed")
-		}
-		return cachedBusStops, hit, nil
+		return cached.(BusStops), hit, nil
 	}
-	atbBusStops, err := a.Client.GetBusStops()
+	atbBusStops, err := a.Client.BusStops()
 	if err != nil {
 		return BusStops{}, hit, err
 	}
@@ -72,7 +67,7 @@ func (a *API) getBusStops(urlPrefix string) (BusStops, bool, error) {
 		// Store a pointer to the BusStop struct
 		busStops.nodeIDs[s.NodeID] = &busStops.Stops[i]
 	}
-	a.cache.Set(cacheKey, busStops, a.expiration.stops)
+	a.cache.Set(cacheKey, busStops, a.ttl.stops)
 	return busStops, hit, nil
 }
 
@@ -80,14 +75,9 @@ func (a *API) getDepartures(urlPrefix string, nodeID int) (Departures, bool, err
 	cacheKey := strconv.Itoa(nodeID)
 	cached, hit := a.cache.Get(cacheKey)
 	if hit {
-		cachedDepartures, ok := cached.(Departures)
-		if !ok {
-			return Departures{}, false, fmt.Errorf(
-				"type assertion of cached value failed")
-		}
-		return cachedDepartures, hit, nil
+		return cached.(Departures), hit, nil
 	}
-	forecasts, err := a.Client.GetRealTimeForecast(nodeID)
+	forecasts, err := a.Client.Forecasts(nodeID)
 	if err != nil {
 		return Departures{}, hit, err
 	}
@@ -115,7 +105,7 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, r *http.Request) (interface
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
-			Message: "failed to get bus stops from atb",
+			Message: "Failed to get bus stops from AtB",
 		}
 	}
 	a.setCacheHeader(w, hit)
@@ -133,7 +123,7 @@ func (a *API) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusBadRequest,
-			Message: "missing or invalid nodeID",
+			Message: "Invalid nodeID",
 		}
 	}
 	busStops, hit, err := a.getBusStops(urlPrefix(r))
@@ -141,16 +131,14 @@ func (a *API) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
-			Message: "failed to get bus stops from atb",
+			Message: "Failed to get bus stops from AtB",
 		}
 	}
 	busStop, ok := busStops.nodeIDs[nodeID]
 	if !ok {
-		msg := fmt.Sprintf("bus stop with nodeID=%d not found", nodeID)
 		return nil, &Error{
-			err:     err,
 			Status:  http.StatusNotFound,
-			Message: msg,
+			Message: "Unknown bus stop",
 		}
 	}
 	a.setCacheHeader(w, hit)
@@ -168,7 +156,7 @@ func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interfac
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusBadRequest,
-			Message: "missing or invalid nodeID",
+			Message: "Invalid nodeID",
 		}
 	}
 	busStops, hit, err := a.getBusStops(urlPrefix(r))
@@ -176,16 +164,14 @@ func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interfac
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
-			Message: "could not get bus stops from atb",
+			Message: "Failed to get bus stops from AtB",
 		}
 	}
-	_, knownBusStop := busStops.nodeIDs[nodeID]
-	if !knownBusStop {
-		msg := fmt.Sprintf("bus stop with nodeID=%d not found", nodeID)
+	_, ok := busStops.nodeIDs[nodeID]
+	if !ok {
 		return nil, &Error{
-			err:     err,
 			Status:  http.StatusNotFound,
-			Message: msg,
+			Message: "Unknown bus stop",
 		}
 	}
 	departures, hit, err := a.getDepartures(urlPrefix(r), nodeID)
@@ -193,7 +179,7 @@ func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interfac
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
-			Message: "could not get departures from atb",
+			Message: "Failed to get departures from AtB",
 		}
 	}
 	a.setCacheHeader(w, hit)
@@ -207,7 +193,7 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, r *http.Request) (interfa
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
-			Message: "failed to get bus stops from atb",
+			Message: "Failed to get bus stops from AtB",
 		}
 	}
 	a.setCacheHeader(w, hit)
@@ -221,10 +207,10 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, r *http.Request) (interfa
 	return urls, nil
 }
 
-// RootHandler lists known URLs.
-func (a *API) RootHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+// DefaultHandler lists known URLs.
+func (a *API) DefaultHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
 	if r.URL.Path != "/" {
-		return a.NotFoundHandler(w, r)
+		return nil, &Error{Status: http.StatusNotFound, Message: "Resource not found"}
 	}
 	prefix := urlPrefix(r)
 	busStopsURL := fmt.Sprintf("%s/api/v1/busstops", prefix)
@@ -236,27 +222,17 @@ func (a *API) RootHandler(w http.ResponseWriter, r *http.Request) (interface{}, 
 	}, nil
 }
 
-// NotFoundHandler handles requests to invalid routes.
-func (a *API) NotFoundHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
-	return nil, &Error{
-		err:     nil,
-		Status:  http.StatusNotFound,
-		Message: "route not found",
-	}
-}
-
-// New returns an new API using client to communicate with AtB. stopsExpiration
-// and depExpiration control the cache expiration times for bus stops and
-// departures.
-func New(client atb.Client, stopsExpiration, depExpiration time.Duration, cors bool) API {
-	cache := cache.New(depExpiration, 30*time.Second)
+// New returns an new API using client to communicate with AtB. stopTTL and departureTTL control the cache TTL bus stops
+// and departures.
+func New(client atb.Client, stopTTL, departureTTL time.Duration, cors bool) API {
+	cache := cache.New(departureTTL, 30*time.Second)
 	return API{
 		Client: client,
 		CORS:   cors,
 		cache:  cache,
-		expiration: expiration{
-			stops:      stopsExpiration,
-			departures: depExpiration,
+		ttl: ttl{
+			stops:      stopTTL,
+			departures: departureTTL,
 		},
 	}
 }
@@ -303,6 +279,6 @@ func (a *API) Handler() http.Handler {
 	mux.Handle("/api/v1/busstops/", appHandler(a.BusStopHandler))
 	mux.Handle("/api/v1/departures", appHandler(a.DeparturesHandler))
 	mux.Handle("/api/v1/departures/", appHandler(a.DepartureHandler))
-	mux.Handle("/", appHandler(a.RootHandler))
+	mux.Handle("/", appHandler(a.DefaultHandler))
 	return requestFilter(mux, a.CORS)
 }
