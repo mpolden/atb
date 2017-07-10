@@ -2,26 +2,39 @@ package api
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/mpolden/atbapi/atb"
 )
 
-func newTestServer(path string, body string) *httptest.Server {
+func atbServer() *httptest.Server {
 	handler := func(w http.ResponseWriter, r *http.Request) {
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			panic(err)
+		}
+		xml := string(b)
 		w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
-		fmt.Fprint(w, body)
+		if strings.Contains(xml, "GetBusStopsList") {
+			fmt.Fprint(w, busStopsResponse)
+		} else if strings.Contains(xml, "getUserRealTimeForecastByStop") {
+			fmt.Fprint(w, forecastResponse)
+		} else {
+			panic("unknown request body: " + xml)
+		}
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc(path, handler)
+	mux.HandleFunc("/", handler)
 	return httptest.NewServer(mux)
 }
 
 func TestGetBusStops(t *testing.T) {
-	server := newTestServer("/", busStopsResponse)
+	server := atbServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
@@ -46,7 +59,7 @@ func TestGetBusStops(t *testing.T) {
 }
 
 func TestGetBusStopsCache(t *testing.T) {
-	server := newTestServer("/", busStopsResponse)
+	server := atbServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
@@ -67,7 +80,7 @@ func TestGetBusStopsCache(t *testing.T) {
 }
 
 func TestGetDepartures(t *testing.T) {
-	server := newTestServer("/", forecastResponse)
+	server := atbServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
@@ -89,7 +102,7 @@ func TestGetDepartures(t *testing.T) {
 }
 
 func TestGetDeparturesCache(t *testing.T) {
-	server := newTestServer("/", forecastResponse)
+	server := atbServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)

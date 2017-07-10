@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -31,7 +32,7 @@ func main() {
 	api := api.New(client, opts.CacheStops, opts.CacheDepartures, opts.CORS)
 
 	log.Printf("Listening on %s", opts.Listen)
-	if err := api.ListenAndServe(opts.Listen); err != nil {
+	if err := http.ListenAndServe(opts.Listen, api.Handler()); err != nil {
 		log.Fatal(err)
 	}
 }
