@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -35,7 +36,20 @@ func marshal(data interface{}, indent bool) ([]byte, error) {
 	return json.Marshal(data)
 }
 
-func (a *API) getBusStops() (BusStops, bool, error) {
+func urlPrefix(r *http.Request) string {
+	host := r.Host
+	if host == "" {
+		host = r.RemoteAddr
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	url := url.URL{Scheme: scheme, Host: host}
+	return url.String()
+}
+
+func (a *API) getBusStops(urlPrefix string) (BusStops, bool, error) {
 	const cacheKey = "stops"
 	cached, hit := a.cache.Get(cacheKey)
 	if hit {
@@ -54,6 +68,9 @@ func (a *API) getBusStops() (BusStops, bool, error) {
 	if err != nil {
 		return BusStops{}, hit, err
 	}
+	for i := range busStops.Stops {
+		busStops.Stops[i].URL = fmt.Sprintf("%s/api/v1/busstops/%d", urlPrefix, busStops.Stops[i].NodeID)
+	}
 	// Create a map of nodeIds
 	busStops.nodeIDs = make(map[int]*BusStop, len(busStops.Stops))
 	for i, s := range busStops.Stops {
@@ -64,7 +81,7 @@ func (a *API) getBusStops() (BusStops, bool, error) {
 	return busStops, hit, nil
 }
 
-func (a *API) getDepartures(nodeID int) (Departures, bool, error) {
+func (a *API) getDepartures(urlPrefix string, nodeID int) (Departures, bool, error) {
 	cacheKey := strconv.Itoa(nodeID)
 	cached, hit := a.cache.Get(cacheKey)
 	if hit {
@@ -83,6 +100,7 @@ func (a *API) getDepartures(nodeID int) (Departures, bool, error) {
 	if err != nil {
 		return Departures{}, hit, err
 	}
+	departures.URL = fmt.Sprintf("%s/api/v1/departures/%d", urlPrefix, nodeID)
 	a.cache.Set(cacheKey, departures, cache.DefaultExpiration)
 	return departures, hit, nil
 }
@@ -97,7 +115,7 @@ func (a *API) setCacheHeader(w http.ResponseWriter, hit bool) {
 
 // BusStopsHandler is a handler for retrieving bus stops.
 func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
-	busStops, hit, err := a.getBusStops()
+	busStops, hit, err := a.getBusStops(urlPrefix(req))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -110,7 +128,6 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, req *http.Request) (interfa
 	if geojson {
 		return busStops.GeoJSON(), nil
 	}
-
 	return busStops, nil
 }
 
@@ -125,7 +142,7 @@ func (a *API) BusStopHandler(w http.ResponseWriter, req *http.Request) (interfac
 			Message: "missing or invalid nodeID",
 		}
 	}
-	busStops, hit, err := a.getBusStops()
+	busStops, hit, err := a.getBusStops(urlPrefix(req))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -150,8 +167,8 @@ func (a *API) BusStopHandler(w http.ResponseWriter, req *http.Request) (interfac
 	return busStop, nil
 }
 
-// DeparturesHandler is a handler for retrieving departures.
-func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+// DepartureHandler is a handler for retrieving departures for a given bus stop
+func (a *API) DepartureHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
 	vars := mux.Vars(req)
 	nodeID, err := strconv.Atoi(vars["nodeID"])
 	if err != nil {
@@ -161,7 +178,7 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 			Message: "missing or invalid nodeID",
 		}
 	}
-	busStops, hit, err := a.getBusStops()
+	busStops, hit, err := a.getBusStops(urlPrefix(req))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -178,7 +195,7 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 			Message: msg,
 		}
 	}
-	departures, hit, err := a.getDepartures(nodeID)
+	departures, hit, err := a.getDepartures(urlPrefix(req), nodeID)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -190,14 +207,36 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (inter
 	return departures, nil
 }
 
-// RootHandler lists known routes
+// DeparturesHandler lists all known departures
+func (a *API) DeparturesHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
+	busStops, hit, err := a.getBusStops(urlPrefix(req))
+	if err != nil {
+		return nil, &Error{
+			err:     err,
+			Status:  http.StatusInternalServerError,
+			Message: "failed to get bus stops from atb",
+		}
+	}
+	a.setCacheHeader(w, hit)
+	var urls struct {
+		URLs []string `json:"urls"`
+	}
+	urls.URLs = make([]string, len(busStops.Stops))
+	for i, stop := range busStops.Stops {
+		urls.URLs[i] = fmt.Sprintf("%s/api/v1/departures/%d", urlPrefix(req), stop.NodeID)
+	}
+	return urls, nil
+}
+
+// RootHandler lists known URLs
 func (a *API) RootHandler(w http.ResponseWriter, req *http.Request) (interface{}, *Error) {
-	return Root{
-		KnownRoutes: []Route{
-			{Method: "GET", Path: "/api/v1/busstops", Description: "All known bus stops"},
-			{Method: "GET", Path: "/api/v1/busstops/<node-id>", Description: "Information about the given bus stop"},
-			{Method: "GET", Path: "/api/v1/departures/<node-id>", Description: "Departures for the given bus stop"},
-		},
+	prefix := urlPrefix(req)
+	busStopsURL := fmt.Sprintf("%s/api/v1/busstops", prefix)
+	departuresURL := fmt.Sprintf("%s/api/v1/departures", prefix)
+	return struct {
+		URLs []string `json:"urls"`
+	}{
+		[]string{busStopsURL, departuresURL},
 	}, nil
 }
 
@@ -271,8 +310,8 @@ func (a *API) ListenAndServe(addr string) error {
 	r := mux.NewRouter()
 	r.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
 	r.Handle("/api/v1/busstops/{nodeID:[0-9]+}", appHandler(a.BusStopHandler))
-	r.Handle("/api/v1/departures/{nodeID:[0-9]+}",
-		appHandler(a.DeparturesHandler))
+	r.Handle("/api/v1/departures", appHandler(a.DeparturesHandler))
+	r.Handle("/api/v1/departures/{nodeID:[0-9]+}", appHandler(a.DepartureHandler))
 	r.Handle("/", appHandler(a.RootHandler))
 	r.NotFoundHandler = appHandler(a.NotFoundHandler)
 	http.Handle("/", requestFilter(r, a.CORS))

@@ -47,7 +47,7 @@ func TestGetBusStops(t *testing.T) {
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, _, err := api.getBusStops()
+	_, _, err := api.getBusStops("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,14 +72,14 @@ func TestGetBusStopsCache(t *testing.T) {
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, hit, err := api.getBusStops()
+	_, hit, err := api.getBusStops("")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hit {
 		t.Error("Expected false")
 	}
-	_, hit, err = api.getBusStops()
+	_, hit, err = api.getBusStops("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestGetDepartures(t *testing.T) {
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, _, err := api.getDepartures(16011376)
+	_, _, err := api.getDepartures("", 16011376)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,14 +115,14 @@ func TestGetDeparturesCache(t *testing.T) {
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, hit, err := api.getDepartures(16011376)
+	_, hit, err := api.getDepartures("", 16011376)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hit {
 		t.Error("Expected false")
 	}
-	_, hit, err = api.getDepartures(16011376)
+	_, hit, err = api.getDepartures("", 16011376)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,18 +9,6 @@ import (
 	"github.com/mpolden/atbapi/atb"
 )
 
-// Root is a collection of known API routes
-type Root struct {
-	KnownRoutes []Route `json:"knownRoutes"`
-}
-
-// Route represents a valid API route
-type Route struct {
-	Method      string `json:"method"`
-	Path        string `json:"path"`
-	Description string `json:"description"`
-}
-
 // BusStops represents a list of bus stops.
 type BusStops struct {
 	Stops   []BusStop `json:"stops"`
@@ -29,6 +17,7 @@ type BusStops struct {
 
 // BusStop represents a single bus stop.
 type BusStop struct {
+	URL         string  `json:"url"`
 	StopID      int     `json:"stopId"`
 	NodeID      int     `json:"nodeId"`
 	Description string  `json:"description"`
@@ -59,6 +48,7 @@ type GeoJSONCollection struct {
 
 // Departures represents a list of departures, from a given bus stop.
 type Departures struct {
+	URL            string      `json:"url"`
 	TowardsCentrum bool        `json:"isGoingTowardsCentrum"`
 	Departures     []Departure `json:"departures"`
 }
