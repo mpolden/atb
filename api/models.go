@@ -27,7 +27,7 @@ type BusStop struct {
 	MobileName  string  `json:"mobileName"`
 }
 
-// GeoJSON represents the top-level object of the GeoJSON format
+// GeoJSON represents the top-level object of the GeoJSON format.
 type GeoJSON struct {
 	Type       string `json:"type"`
 	Geometry   `json:"geometry"`

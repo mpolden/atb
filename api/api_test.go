@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"github.com/mpolden/atbapi/atb"
 )
 
-func atbServer() *httptest.Server {
+func atbTestServer() *httptest.Server {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -33,8 +34,75 @@ func atbServer() *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
+func testServers() (*httptest.Server, *httptest.Server) {
+	atbServer := atbTestServer()
+	atb := atb.Client{URL: atbServer.URL}
+	api := New(atb, 168*time.Hour, 1*time.Minute, false)
+	return atbServer, httptest.NewServer(api.Handler())
+}
+
+func httpGet(url string) (string, string, int, error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return "", "", 0, err
+	}
+	defer res.Body.Close()
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", "", 0, err
+	}
+	return string(data), res.Header["Content-Type"][0], res.StatusCode, nil
+}
+
+func TestAPI(t *testing.T) {
+	atbServer, server := testServers()
+	defer atbServer.Close()
+	defer server.Close()
+	log.SetOutput(ioutil.Discard)
+
+	var tests = []struct {
+		url      string
+		response string
+		status   int
+	}{
+		// Unknown resources
+		{"/not-found", `{"status":404,"message":"route not found"}`, 404},
+		// List know URLs
+		{"/", fmt.Sprintf(`{"urls":["%s/api/v1/busstops","%s/api/v1/departures"]}`, server.URL, server.URL), 200},
+		// List all bus stops
+		{"/api/v1/busstops", fmt.Sprintf(`{"stops":[{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}]}`, server.URL), 200},
+		// List all departures
+		{"/api/v1/departures", fmt.Sprintf(`{"urls":["%s/api/v1/departures/16011376"]}`, server.URL), 200},
+		// Show specific bus stop
+		{"/api/v1/busstops/", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
+		{"/api/v1/busstops/foo", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
+		{"/api/v1/busstops/42", `{"status":404,"message":"bus stop with nodeID=42 not found"}`, 404},
+		{"/api/v1/busstops/16011376", fmt.Sprintf(`{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}`, server.URL), 200},
+		// Show specific departure
+		{"/api/v1/departures/", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
+		{"/api/v1/departures/foo", `{"status":400,"message":"missing or invalid nodeID"}`, 400},
+		{"/api/v1/departures/42", `{"status":404,"message":"bus stop with nodeID=42 not found"}`, 404},
+		{"/api/v1/departures/16011376", fmt.Sprintf(`{"url":"%s/api/v1/departures/16011376","isGoingTowardsCentrum":true,"departures":[{"line":"6","registeredDepartureTime":"2015-02-26T18:38:00.000","scheduledDepartureTime":"2015-02-26T18:01:00.000","destination":"Munkegata M5","isRealtimeData":true}]}`, server.URL), 200},
+	}
+	for _, tt := range tests {
+		data, contentType, status, err := httpGet(server.URL + tt.url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if contentType != "application/json" {
+			t.Errorf("want content-type application/json for %s, got %s", tt.url, contentType)
+		}
+		if got := status; status != tt.status {
+			t.Errorf("want status %d for %s, got %d", tt.status, tt.url, got)
+		}
+		if got := string(data); got != tt.response {
+			t.Errorf("want response %s for %s, got %s", tt.response, tt.url, got)
+		}
+	}
+}
+
 func TestGetBusStops(t *testing.T) {
-	server := atbServer()
+	server := atbTestServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
@@ -59,7 +127,7 @@ func TestGetBusStops(t *testing.T) {
 }
 
 func TestGetBusStopsCache(t *testing.T) {
-	server := atbServer()
+	server := atbTestServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
@@ -80,7 +148,7 @@ func TestGetBusStopsCache(t *testing.T) {
 }
 
 func TestGetDepartures(t *testing.T) {
-	server := atbServer()
+	server := atbTestServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
@@ -102,7 +170,7 @@ func TestGetDepartures(t *testing.T) {
 }
 
 func TestGetDeparturesCache(t *testing.T) {
-	server := atbServer()
+	server := atbTestServer()
 	defer server.Close()
 	atb := atb.Client{URL: server.URL}
 	api := New(atb, 168*time.Hour, 1*time.Minute, false)
