@@ -36,6 +36,10 @@ func urlPrefix(r *http.Request) string {
 	if r.TLS != nil {
 		scheme = "https"
 	}
+	forwardedProto := r.Header["X-Forwarded-Proto"]
+	if len(forwardedProto) > 0 {
+		scheme = forwardedProto[0]
+	}
 	url := url.URL{Scheme: scheme, Host: host}
 	return url.String()
 }

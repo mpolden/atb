@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -97,6 +98,25 @@ func TestAPI(t *testing.T) {
 		}
 		if got := string(data); got != tt.response {
 			t.Errorf("want response %s for %s, got %s", tt.response, tt.url, got)
+		}
+	}
+}
+
+func TestURLPrefix(t *testing.T) {
+	var tests = []struct {
+		in  *http.Request
+		out string
+	}{
+		{&http.Request{Host: "foo"}, "http://foo"},
+		{&http.Request{Host: "", RemoteAddr: "127.0.0.1"}, "http://127.0.0.1"},
+		{&http.Request{Host: "bar", TLS: &tls.ConnectionState{}}, "https://bar"},
+		{&http.Request{Host: "baz", Header: map[string][]string{"X-Forwarded-Proto": []string{"https"}}}, "https://baz"},
+		{&http.Request{Host: "qux", Header: map[string][]string{"X-Forwarded-Proto": []string{}}}, "http://qux"},
+	}
+	for _, tt := range tests {
+		prefix := urlPrefix(tt.in)
+		if prefix != tt.out {
+			t.Errorf("want %s, got %s", tt.out, prefix)
 		}
 	}
 }
