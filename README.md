@@ -45,13 +45,12 @@ Help Options:
 
 ## API usage
 
-The route `/api/v1/busstops` returns a list of all known bus stops. All routes
-support the parameter `?pretty` to return pretty-printed JSON.
+The route `/api/v1/busstops` returns a list of all known bus stops.
 
 Example:
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/busstops?pretty'
+$ curl 'https://atbapi.tar.io/api/v1/busstops' | jq .
 {
   "stops": [
     ...
@@ -75,7 +74,7 @@ stop, identified by a node ID.
 Example:
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?pretty'
+$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376' | jq .
 {
   "stopId": 100633,
   "nodeId": 16011376,
@@ -90,7 +89,7 @@ $ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?pretty'
 As [GeoJSON](http://geojson.org/):
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?pretty&geojson'
+$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?geojson' | jq .
 {
   "type": "Feature",
   "geometry": {
@@ -121,7 +120,7 @@ stop, identified by a node ID.
 Example:
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/departures/16011376?pretty'
+$ curl 'https://atbapi.tar.io/api/v1/departures/16011376' | jq .
 {
   "isGoingTowardsCentrum": true,
   "departures": [

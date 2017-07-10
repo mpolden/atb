@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"context"
-
 	"github.com/gorilla/mux"
 	"github.com/mpolden/atbapi/atb"
 	cache "github.com/pmylund/go-cache"
@@ -27,13 +25,6 @@ type API struct {
 type expiration struct {
 	departures time.Duration
 	stops      time.Duration
-}
-
-func marshal(data interface{}, indent bool) ([]byte, error) {
-	if indent {
-		return json.MarshalIndent(data, "", "  ")
-	}
-	return json.Marshal(data)
 }
 
 func urlPrefix(r *http.Request) string {
@@ -273,28 +264,24 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if e.err != nil {
 			log.Print(e.err)
 		}
-		jsonBlob, err := marshal(e, true)
+		out, err := json.Marshal(e)
 		if err != nil {
 			// Should never happen
 			panic(err)
 		}
 		w.WriteHeader(e.Status)
-		w.Write(jsonBlob)
+		w.Write(out)
 	} else {
-		indent := r.Context().Value("indent").(bool)
-		jsonBlob, err := marshal(data, indent)
+		out, err := json.Marshal(data)
 		if err != nil {
 			panic(err)
 		}
-		w.Write(jsonBlob)
+		w.Write(out)
 	}
 }
 
 func requestFilter(next http.Handler, cors bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, indent := r.URL.Query()["pretty"]
-		ctx := context.Background()
-		r = r.WithContext(context.WithValue(ctx, "indent", indent))
 		w.Header().Set("Content-Type", "application/json")
 		if cors {
 			w.Header().Set("Access-Control-Allow-Methods", "GET")

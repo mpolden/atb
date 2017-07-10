@@ -10,28 +10,6 @@ import (
 	"github.com/mpolden/atbapi/atb"
 )
 
-func TestMarshal(t *testing.T) {
-	data := struct{ Foo string }{"bar"}
-	b, err := marshal(data, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	actual := string(b)
-	expected := "{\n  \"Foo\": \"bar\"\n}"
-	if actual != expected {
-		t.Fatalf("Expected '%s', got '%s'", expected, actual)
-	}
-	b, err = marshal(data, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	actual = string(b)
-	expected = "{\"Foo\":\"bar\"}"
-	if actual != expected {
-		t.Fatalf("Expected '%s', got '%s'", expected, actual)
-	}
-}
-
 func newTestServer(path string, body string) *httptest.Server {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
