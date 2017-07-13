@@ -43,17 +43,35 @@ Help Options:
 }
 ```
 
-## API usage
+## API
 
-The route `/api/v1/busstops` returns a list of all known bus stops.
+### `/`
+
+Lists all available API routes.
 
 Example:
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/busstops' | jq .
+$ curl https://atbapi.tar.io | jq .
+{
+  "urls": [
+    "https://atbapi.tar.io/api/v1/busstops",
+    "https://atbapi.tar.io/api/v1/departures"
+  ]
+}
+```
+
+
+### `/api/v1/busstops`
+
+Lists all known bus stops.
+
+Example:
+
+```
+$ curl https://atbapi.tar.io/api/v1/busstops | jq .
 {
   "stops": [
-    ...
     {
       "stopId": 100633,
       "nodeId": 16011376,
@@ -68,13 +86,14 @@ $ curl 'https://atbapi.tar.io/api/v1/busstops' | jq .
 }
 ```
 
-The route `/api/v1/busstops/<nodeID>` returns information about a given bus
-stop, identified by a node ID.
+### `/api/v1/busstops/{node-id}`
+
+Information about the given bus stop, identified by a node ID.
 
 Example:
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376' | jq .
+$ curl https://atbapi.tar.io/api/v1/busstops/16011376 | jq .
 {
   "stopId": 100633,
   "nodeId": 16011376,
@@ -89,7 +108,7 @@ $ curl 'https://atbapi.tar.io/api/v1/busstops/16011376' | jq .
 As [GeoJSON](http://geojson.org/):
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?geojson' | jq .
+$ curl https://atbapi.tar.io/api/v1/busstops/16011376?geojson | jq .
 {
   "type": "Feature",
   "geometry": {
@@ -114,17 +133,33 @@ $ curl 'https://atbapi.tar.io/api/v1/busstops/16011376?geojson' | jq .
 }
 ```
 
-The route `/api/v1/departures/<nodeID>` returns a list of departures for a given bus
-stop, identified by a node ID.
+### `/api/v1/departures`
+
+Lists departure URLs for all known bus stops.
 
 Example:
 
 ```
-$ curl 'https://atbapi.tar.io/api/v1/departures/16011376' | jq .
+$ curl -s https://atbapi.tar.io/api/v1/departures | jq .
+{
+  "urls": [
+    "https://atbapi.tar.io/api/v1/departures/15057011",
+    ...
+  ]
+}
+```
+
+### `/api/v1/departures/{node-id}`
+
+Lists all departures for the given bus stop, identified by a node ID.
+
+Example:
+
+```
+$ curl https://atbapi.tar.io/api/v1/departures/16011376 | jq .
 {
   "isGoingTowardsCentrum": true,
   "departures": [
-    ...
     {
       "line": "36",
       "registeredDepartureTime": "2015-02-26T22:55:00.000",
