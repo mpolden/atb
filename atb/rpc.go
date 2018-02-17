@@ -3,53 +3,56 @@ package atb
 import (
 	"bytes"
 	"encoding/xml"
+	"io"
 	"text/template"
 )
 
-type method interface {
-	NewRequest(data interface{}) (string, error)
-	Unmarshal(b []byte) ([]byte, error)
+type request interface {
+	Body(data interface{}) (io.Reader, error)
+	Decode(r io.Reader) ([]byte, error)
 }
 
-func compileTemplate(t *template.Template, data interface{}) (string, error) {
+func compileTemplate(t *template.Template, data interface{}) (io.Reader, error) {
 	var b bytes.Buffer
 	if err := t.Execute(&b, data); err != nil {
-		return "", err
+		return nil, err
 	}
-	return b.String(), nil
+	return &b, nil
 }
 
-type busStopsListMethod struct {
+type busStopsRequest struct {
 	XMLName  xml.Name `xml:"Envelope"`
 	Result   []byte   `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
 	template *template.Template
 }
 
-type realTimeForecastMethod struct {
+type forecastRequest struct {
 	XMLName  xml.Name `xml:"Envelope"`
 	Result   []byte   `xml:"Body>getUserRealTimeForecastByStopResponse>getUserRealTimeForecastByStopResult"`
 	template *template.Template
 }
 
-func (m *busStopsListMethod) NewRequest(data interface{}) (string, error) {
+func (m *busStopsRequest) Body(data interface{}) (io.Reader, error) {
 	return compileTemplate(m.template, data)
 }
 
-func (m *busStopsListMethod) Unmarshal(body []byte) ([]byte, error) {
-	var stops busStopsListMethod
-	if err := xml.Unmarshal(body, &stops); err != nil {
+func (m *busStopsRequest) Decode(r io.Reader) ([]byte, error) {
+	var stops busStopsRequest
+	dec := xml.NewDecoder(r)
+	if err := dec.Decode(&stops); err != nil {
 		return nil, err
 	}
 	return stops.Result, nil
 }
 
-func (m *realTimeForecastMethod) NewRequest(data interface{}) (string, error) {
+func (m *forecastRequest) Body(data interface{}) (io.Reader, error) {
 	return compileTemplate(m.template, data)
 }
 
-func (m *realTimeForecastMethod) Unmarshal(body []byte) ([]byte, error) {
-	var forecast realTimeForecastMethod
-	if err := xml.Unmarshal(body, &forecast); err != nil {
+func (m *forecastRequest) Decode(r io.Reader) ([]byte, error) {
+	var forecast forecastRequest
+	dec := xml.NewDecoder(r)
+	if err := dec.Decode(&forecast); err != nil {
 		return nil, err
 	}
 	return forecast.Result, nil
@@ -60,7 +63,7 @@ func templateMust(src string) *template.Template {
 }
 
 var (
-	busStopsList = &busStopsListMethod{
+	busStops = &busStopsRequest{
 		template: templateMust(`<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -73,7 +76,7 @@ var (
   </soap12:Body>
 </soap12:Envelope>`),
 	}
-	realTimeForecast = &realTimeForecastMethod{
+	forecast = &forecastRequest{
 		template: templateMust(`<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>

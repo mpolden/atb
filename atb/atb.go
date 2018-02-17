@@ -1,7 +1,6 @@
 package atb
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -78,26 +77,21 @@ func NewFromConfig(name string) (Client, error) {
 	return client, nil
 }
 
-func (c *Client) post(m method, data interface{}) ([]byte, error) {
-	req, err := m.NewRequest(data)
+func (c *Client) post(r request, data interface{}) ([]byte, error) {
+	body, err := r.Body(data)
 	if err != nil {
 		return nil, err
 	}
-	buf := bytes.NewBufferString(req)
-	resp, err := http.Post(c.URL, "application/soap+xml", buf)
+	resp, err := http.Post(c.URL, "application/soap+xml", body)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	b, err := r.Decode(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	out, err := m.Unmarshal(body)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+	return b, nil
 }
 
 // BusStops retrieves bus stops from AtBs API.
@@ -107,7 +101,7 @@ func (c *Client) BusStops() (BusStops, error) {
 		Password string
 	}{c.Username, c.Password}
 
-	res, err := c.post(busStopsList, values)
+	res, err := c.post(busStops, values)
 	if err != nil {
 		return BusStops{}, err
 	}
@@ -127,7 +121,7 @@ func (c *Client) Forecasts(nodeID int) (Forecasts, error) {
 		NodeID   int
 	}{c.Username, c.Password, nodeID}
 
-	res, err := c.post(realTimeForecast, values)
+	res, err := c.post(forecast, values)
 	if err != nil {
 		return Forecasts{}, err
 	}
