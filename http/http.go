@@ -1,4 +1,4 @@
-package api
+package http
 
 import (
 	"encoding/json"
@@ -14,8 +14,8 @@ import (
 	cache "github.com/pmylund/go-cache"
 )
 
-// API defines parameters for running an API server.
-type API struct {
+// Server represents an Server server.
+type Server struct {
 	Client atb.Client
 	CORS   bool
 	cache  *cache.Cache
@@ -44,13 +44,13 @@ func urlPrefix(r *http.Request) string {
 	return url.String()
 }
 
-func (a *API) getBusStops(urlPrefix string) (BusStops, bool, error) {
+func (s *Server) getBusStops(urlPrefix string) (BusStops, bool, error) {
 	const cacheKey = "stops"
-	cached, hit := a.cache.Get(cacheKey)
+	cached, hit := s.cache.Get(cacheKey)
 	if hit {
 		return cached.(BusStops), hit, nil
 	}
-	atbBusStops, err := a.Client.BusStops()
+	atbBusStops, err := s.Client.BusStops()
 	if err != nil {
 		return BusStops{}, hit, err
 	}
@@ -67,17 +67,17 @@ func (a *API) getBusStops(urlPrefix string) (BusStops, bool, error) {
 		// Store a pointer to the BusStop struct
 		busStops.nodeIDs[s.NodeID] = &busStops.Stops[i]
 	}
-	a.cache.Set(cacheKey, busStops, a.ttl.stops)
+	s.cache.Set(cacheKey, busStops, s.ttl.stops)
 	return busStops, hit, nil
 }
 
-func (a *API) getDepartures(urlPrefix string, nodeID int) (Departures, bool, error) {
+func (s *Server) getDepartures(urlPrefix string, nodeID int) (Departures, bool, error) {
 	cacheKey := strconv.Itoa(nodeID)
-	cached, hit := a.cache.Get(cacheKey)
+	cached, hit := s.cache.Get(cacheKey)
 	if hit {
 		return cached.(Departures), hit, nil
 	}
-	forecasts, err := a.Client.Forecasts(nodeID)
+	forecasts, err := s.Client.Forecasts(nodeID)
 	if err != nil {
 		return Departures{}, hit, err
 	}
@@ -86,11 +86,11 @@ func (a *API) getDepartures(urlPrefix string, nodeID int) (Departures, bool, err
 		return Departures{}, hit, err
 	}
 	departures.URL = fmt.Sprintf("%s/api/v1/departures/%d", urlPrefix, nodeID)
-	a.cache.Set(cacheKey, departures, cache.DefaultExpiration)
+	s.cache.Set(cacheKey, departures, cache.DefaultExpiration)
 	return departures, hit, nil
 }
 
-func (a *API) setCacheHeader(w http.ResponseWriter, hit bool) {
+func (s *Server) setCacheHeader(w http.ResponseWriter, hit bool) {
 	v := "MISS"
 	if hit {
 		v = "HIT"
@@ -99,8 +99,8 @@ func (a *API) setCacheHeader(w http.ResponseWriter, hit bool) {
 }
 
 // BusStopsHandler is a handler for retrieving bus stops.
-func (a *API) BusStopsHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
-	busStops, hit, err := a.getBusStops(urlPrefix(r))
+func (s *Server) BusStopsHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+	busStops, hit, err := s.getBusStops(urlPrefix(r))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -108,7 +108,7 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, r *http.Request) (interface
 			Message: "Failed to get bus stops from AtB",
 		}
 	}
-	a.setCacheHeader(w, hit)
+	s.setCacheHeader(w, hit)
 	_, geojson := r.URL.Query()["geojson"]
 	if geojson {
 		return busStops.GeoJSON(), nil
@@ -117,7 +117,7 @@ func (a *API) BusStopsHandler(w http.ResponseWriter, r *http.Request) (interface
 }
 
 // BusStopHandler is a handler for retrieving info about a bus stop.
-func (a *API) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+func (s *Server) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
 	nodeID, err := strconv.Atoi(filepath.Base(r.URL.Path))
 	if err != nil {
 		return nil, &Error{
@@ -126,7 +126,7 @@ func (a *API) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{
 			Message: "Invalid nodeID",
 		}
 	}
-	busStops, hit, err := a.getBusStops(urlPrefix(r))
+	busStops, hit, err := s.getBusStops(urlPrefix(r))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -141,7 +141,7 @@ func (a *API) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{
 			Message: "Unknown bus stop",
 		}
 	}
-	a.setCacheHeader(w, hit)
+	s.setCacheHeader(w, hit)
 	_, geojson := r.URL.Query()["geojson"]
 	if geojson {
 		return busStop.GeoJSON(), nil
@@ -150,7 +150,7 @@ func (a *API) BusStopHandler(w http.ResponseWriter, r *http.Request) (interface{
 }
 
 // DepartureHandler is a handler for retrieving departures for a given bus stop.
-func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+func (s *Server) DepartureHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
 	nodeID, err := strconv.Atoi(filepath.Base(r.URL.Path))
 	if err != nil {
 		return nil, &Error{
@@ -159,7 +159,7 @@ func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interfac
 			Message: "Invalid nodeID",
 		}
 	}
-	busStops, hit, err := a.getBusStops(urlPrefix(r))
+	busStops, hit, err := s.getBusStops(urlPrefix(r))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -174,7 +174,7 @@ func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interfac
 			Message: "Unknown bus stop",
 		}
 	}
-	departures, hit, err := a.getDepartures(urlPrefix(r), nodeID)
+	departures, hit, err := s.getDepartures(urlPrefix(r), nodeID)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -182,13 +182,13 @@ func (a *API) DepartureHandler(w http.ResponseWriter, r *http.Request) (interfac
 			Message: "Failed to get departures from AtB",
 		}
 	}
-	a.setCacheHeader(w, hit)
+	s.setCacheHeader(w, hit)
 	return departures, nil
 }
 
 // DeparturesHandler lists all known departures.
-func (a *API) DeparturesHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
-	busStops, hit, err := a.getBusStops(urlPrefix(r))
+func (s *Server) DeparturesHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+	busStops, hit, err := s.getBusStops(urlPrefix(r))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -196,7 +196,7 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, r *http.Request) (interfa
 			Message: "Failed to get bus stops from AtB",
 		}
 	}
-	a.setCacheHeader(w, hit)
+	s.setCacheHeader(w, hit)
 	var urls struct {
 		URLs []string `json:"urls"`
 	}
@@ -208,7 +208,7 @@ func (a *API) DeparturesHandler(w http.ResponseWriter, r *http.Request) (interfa
 }
 
 // DefaultHandler lists known URLs.
-func (a *API) DefaultHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+func (s *Server) DefaultHandler(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
 	if r.URL.Path != "/" {
 		return nil, &Error{Status: http.StatusNotFound, Message: "Resource not found"}
 	}
@@ -222,11 +222,11 @@ func (a *API) DefaultHandler(w http.ResponseWriter, r *http.Request) (interface{
 	}, nil
 }
 
-// New returns an new API using client to communicate with AtB. stopTTL and departureTTL control the cache TTL bus stops
-// and departures.
-func New(client atb.Client, stopTTL, departureTTL time.Duration, cors bool) API {
+// New returns a new Server using client to communicate with AtB. stopTTL and departureTTL control the cache TTL bus
+// stops and departures.
+func New(client atb.Client, stopTTL, departureTTL time.Duration, cors bool) Server {
 	cache := cache.New(departureTTL, 30*time.Second)
-	return API{
+	return Server{
 		Client: client,
 		CORS:   cors,
 		cache:  cache,
@@ -273,12 +273,17 @@ func requestFilter(next http.Handler, cors bool) http.Handler {
 }
 
 // Handler returns a root handler for the API.
-func (a *API) Handler() http.Handler {
+func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/api/v1/busstops", appHandler(a.BusStopsHandler))
-	mux.Handle("/api/v1/busstops/", appHandler(a.BusStopHandler))
-	mux.Handle("/api/v1/departures", appHandler(a.DeparturesHandler))
-	mux.Handle("/api/v1/departures/", appHandler(a.DepartureHandler))
-	mux.Handle("/", appHandler(a.DefaultHandler))
-	return requestFilter(mux, a.CORS)
+	mux.Handle("/api/v1/busstops", appHandler(s.BusStopsHandler))
+	mux.Handle("/api/v1/busstops/", appHandler(s.BusStopHandler))
+	mux.Handle("/api/v1/departures", appHandler(s.DeparturesHandler))
+	mux.Handle("/api/v1/departures/", appHandler(s.DepartureHandler))
+	mux.Handle("/", appHandler(s.DefaultHandler))
+	return requestFilter(mux, s.CORS)
+}
+
+// ListenAndServe listens on the TCP network address addr and serves the API.
+func (s *Server) ListenAndServe(addr string) error {
+	return http.ListenAndServe(addr, s.Handler())
 }

@@ -2,13 +2,12 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"time"
 
 	flags "github.com/jessevdk/go-flags"
-	"github.com/mpolden/atbapi/api"
 	"github.com/mpolden/atbapi/atb"
+	"github.com/mpolden/atbapi/http"
 )
 
 func main() {
@@ -29,10 +28,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	api := api.New(client, opts.StopTTL, opts.DepartureTTL, opts.CORS)
+	server := http.New(client, opts.StopTTL, opts.DepartureTTL, opts.CORS)
 
 	log.Printf("Listening on %s", opts.Listen)
-	if err := http.ListenAndServe(opts.Listen, api.Handler()); err != nil {
+	if err := server.ListenAndServe(opts.Listen); err != nil {
 		log.Fatal(err)
 	}
 }
