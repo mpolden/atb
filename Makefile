@@ -1,4 +1,4 @@
-all: deps test vet lint install
+all: test vet lint install
 
 fmt:
 	go fmt ./...
@@ -10,13 +10,9 @@ vet:
 	go vet ./...
 
 lint:
-	golint 2> /dev/null; if [ $$? -eq 127 ]; then \
-		go get -v github.com/golang/lint/golint; \
-	fi
+	cd tools && \
+		go list -tags tools -f '{{range $$i := .Imports}}{{printf "%s\n" $$i}}{{end}}' | xargs go install
 	golint ./...
-
-deps:
-	go get -d -v ./...
 
 install:
 	go install ./...
