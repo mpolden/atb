@@ -9,9 +9,10 @@ Responses from AtBs public API are cached. By default bus stops will be cached
 for 1 week and departures for 1 minute.
 
 If you want to setup this service yourself, you need to request access to the
-SOAP API provided by AtB [here](https://www.atb.no/aapne-data/category419.html)
-(Norwegian). When granted access, you'll receive a username and password (see
-config example below).
+[SOAP API provided by
+AtB](https://www.atb.no/sanntid/apne-data-article5852-1381.html) (Norwegian).
+When granted access, you'll receive a username and password (see config example
+below).
 
 The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy)
 (which appears to be defunct).
