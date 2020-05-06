@@ -9,6 +9,11 @@ import (
 	"github.com/mpolden/atbapi/http"
 )
 
+func init() {
+	log.SetPrefix("atb: ")
+	log.SetFlags(log.Lshortfile)
+}
+
 func mustParseDuration(s string) time.Duration {
 	d, err := time.ParseDuration(s)
 	if err != nil {
