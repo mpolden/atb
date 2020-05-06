@@ -1,37 +1,39 @@
 package main
 
 import (
+	"flag"
 	"log"
-	"os"
 	"time"
 
-	flags "github.com/jessevdk/go-flags"
 	"github.com/mpolden/atbapi/atb"
 	"github.com/mpolden/atbapi/http"
 )
 
-func main() {
-	var opts struct {
-		Listen       string        `short:"l" long:"listen" description:"Listen address" value-name:"ADDRESS" default:":8080"`
-		Config       string        `short:"c" long:"config" description:"Path to config file" value-name:"FILE" default:"config.json"`
-		StopTTL      time.Duration `short:"s" long:"stops-ttl" description:"Bus stop cache duration" value-name:"DURATION" default:"168h"`
-		DepartureTTL time.Duration `short:"d" long:"departure-ttl" description:"Departure cache duration" value-name:"DURATION" default:"1m"`
-		CORS         bool          `short:"x" long:"cors" description:"Allow requests from other domains"`
-	}
-	_, err := flags.ParseArgs(&opts, os.Args)
+func mustParseDuration(s string) time.Duration {
+	d, err := time.ParseDuration(s)
 	if err != nil {
-		os.Exit(1)
+		log.Fatal(err)
 	}
+	return d
+}
 
-	client, err := atb.NewFromConfig(opts.Config)
+func main() {
+	listen := flag.String("l", ":8080", "Listen address")
+	config := flag.String("c", "config.json", "Path to config file")
+	stopTTL := flag.String("s", "168h", "Bus stop cache duration")
+	departureTTL := flag.String("d", "1m", "Departure cache duration")
+	cors := flag.Bool("x", false, "Allow requests from other domains")
+	flag.Parse()
+
+	client, err := atb.NewFromConfig(*config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	server := http.New(client, opts.StopTTL, opts.DepartureTTL, opts.CORS)
+	server := http.New(client, mustParseDuration(*stopTTL), mustParseDuration(*departureTTL), *cors)
 
-	log.Printf("Listening on %s", opts.Listen)
-	if err := server.ListenAndServe(opts.Listen); err != nil {
+	log.Printf("Listening on %s", *listen)
+	if err := server.ListenAndServe(*listen); err != nil {
 		log.Fatal(err)
 	}
 }
