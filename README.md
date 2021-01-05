@@ -53,11 +53,11 @@ Lists all available API routes.
 Example:
 
 ```
-$ curl https://atbapi.tar.io | jq .
+$ curl https://mpolden.no/atb/ | jq .
 {
   "urls": [
-    "https://atbapi.tar.io/api/v1/busstops",
-    "https://atbapi.tar.io/api/v1/departures"
+    "https://mpolden.no/atb/v1/busstops",
+    "https://mpolden.no/atb/v1/departures"
   ]
 }
 ```
@@ -70,7 +70,7 @@ Lists all known bus stops.
 Example:
 
 ```
-$ curl https://atbapi.tar.io/api/v1/busstops | jq .
+$ curl https://mpolden.no/atb/v1/busstops | jq .
 {
   "stops": [
     {
@@ -94,7 +94,7 @@ Information about the given bus stop, identified by a node ID.
 Example:
 
 ```
-$ curl https://atbapi.tar.io/api/v1/busstops/16011376 | jq .
+$ curl https://mpolden.no/atb/v1/busstops/16011376 | jq .
 {
   "stopId": 100633,
   "nodeId": 16011376,
@@ -109,7 +109,7 @@ $ curl https://atbapi.tar.io/api/v1/busstops/16011376 | jq .
 As [GeoJSON](http://geojson.org/):
 
 ```
-$ curl https://atbapi.tar.io/api/v1/busstops/16011376?geojson | jq .
+$ curl https://mpolden.no/atb/v1/busstops/16011376?geojson | jq .
 {
   "type": "Feature",
   "geometry": {
@@ -141,10 +141,10 @@ Lists departure URLs for all known bus stops.
 Example:
 
 ```
-$ curl -s https://atbapi.tar.io/api/v1/departures | jq .
+$ curl -s https://mpolden.no/atb/v1/departures | jq .
 {
   "urls": [
-    "https://atbapi.tar.io/api/v1/departures/15057011",
+    "https://mpolden.no/atb/v1/departures/15057011",
     ...
   ]
 }
@@ -157,7 +157,7 @@ Lists all departures for the given bus stop, identified by a node ID.
 Example:
 
 ```
-$ curl https://atbapi.tar.io/api/v1/departures/16011376 | jq .
+$ curl https://mpolden.no/atb/v1/departures/16011376 | jq .
 {
   "isGoingTowardsCentrum": true,
   "departures": [
