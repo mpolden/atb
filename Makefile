@@ -2,7 +2,7 @@ XGOARCH := amd64
 XGOOS := linux
 XBIN := $(XGOOS)_$(XGOARCH)/atb
 
-all: test vet lint install
+all: test vet tools install
 
 fmt:
 	go fmt ./...
@@ -13,10 +13,10 @@ test:
 vet:
 	go vet ./...
 
-lint:
-	cd tools && \
-		go list -tags tools -f '{{range $$i := .Imports}}{{printf "%s\n" $$i}}{{end}}' | xargs go install
-	golint ./...
+# https://github.com/golang/go/issues/25922
+# https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
+tools:
+	go generate -tags tools ./...
 
 install:
 	go install ./...
