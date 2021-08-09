@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/mpolden/atb/atb"
-	cache "github.com/pmylund/go-cache"
+	"github.com/mpolden/atb/cache"
 )
 
 // Server represents an Server server.
@@ -86,7 +86,7 @@ func (s *Server) getDepartures(urlPrefix string, nodeID int) (Departures, bool, 
 		return Departures{}, hit, err
 	}
 	departures.URL = fmt.Sprintf("%s/api/v1/departures/%d", urlPrefix, nodeID)
-	s.cache.Set(cacheKey, departures, cache.DefaultExpiration)
+	s.cache.Set(cacheKey, departures, s.ttl.departures)
 	return departures, hit, nil
 }
 
@@ -225,7 +225,7 @@ func (s *Server) DefaultHandler(w http.ResponseWriter, r *http.Request) (interfa
 // New returns a new Server using client to communicate with AtB. stopTTL and departureTTL control the cache TTL bus
 // stops and departures.
 func New(client atb.Client, stopTTL, departureTTL time.Duration, cors bool) Server {
-	cache := cache.New(departureTTL, 30*time.Second)
+	cache := cache.New(time.Minute)
 	return Server{
 		Client: client,
 		CORS:   cors,
