@@ -21,18 +21,16 @@ The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy)
 
 ```
 $ atb -h
-Usage:
-  atb [OPTIONS]
-
-Application Options:
-  -l, --listen=ADDRESS               Listen address (:8080)
-  -c, --config=FILE                  Path to config file (config.json)
-  -s, --cache-stops=DURATION         Bus stops cache duration (168h)
-  -d, --cache-departures=DURATION    Departures cache duration (1m)
-  -x, --cors                         Allow requests from other domains (false)
-
-Help Options:
-  -h, --help                         Show this help message
+Usage of atb:
+  -c string
+    	Path to config file (default "config.json")
+  -d string
+    	Departure cache duration (default "1m")
+  -l string
+    	Listen address (default ":8080")
+  -s string
+    	Bus stop cache duration (default "168h")
+  -x	Allow requests from other domains
 ```
 
 ## Example config
