@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mpolden/atbapi/atb"
+	"github.com/mpolden/atb/atb"
 	cache "github.com/pmylund/go-cache"
 )
 

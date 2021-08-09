@@ -1,6 +1,6 @@
 XGOARCH := amd64
 XGOOS := linux
-XBIN := $(XGOOS)_$(XGOARCH)/atbapi
+XBIN := $(XGOOS)_$(XGOARCH)/atb
 
 all: test vet lint install
 

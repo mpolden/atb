@@ -1,6 +1,6 @@
-# atbapi
+# atb
 
-![Build Status](https://github.com/mpolden/atbapi/workflows/ci/badge.svg)
+![Build Status](https://github.com/mpolden/atb/workflows/ci/badge.svg)
 
 A minimal API for bus data in Trondheim, Norway. This API proxies requests to
 the AtB public API and converts the responses into a sane JSON format.
@@ -20,9 +20,9 @@ The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy)
 ## Usage
 
 ```
-$ atbapi -h
+$ atb -h
 Usage:
-  atbapi [OPTIONS]
+  atb [OPTIONS]
 
 Application Options:
   -l, --listen=ADDRESS               Listen address (:8080)

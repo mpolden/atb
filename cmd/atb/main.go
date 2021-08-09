@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/mpolden/atbapi/atb"
-	"github.com/mpolden/atbapi/http"
+	"github.com/mpolden/atb/atb"
+	"github.com/mpolden/atb/http"
 )
 
 func init() {

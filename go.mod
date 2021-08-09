@@ -1,4 +1,4 @@
-module github.com/mpolden/atbapi
+module github.com/mpolden/atb
 
 go 1.13
 

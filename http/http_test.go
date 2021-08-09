@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mpolden/atbapi/atb"
+	"github.com/mpolden/atb/atb"
 )
 
 func atbTestServer() *httptest.Server {

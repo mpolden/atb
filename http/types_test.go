@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mpolden/atbapi/atb"
+	"github.com/mpolden/atb/atb"
 )
 
 func TestConvertBusStop(t *testing.T) {

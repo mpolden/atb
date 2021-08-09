@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mpolden/atbapi/atb"
+	"github.com/mpolden/atb/atb"
 )
 
 // BusStops represents a list of bus stops.
