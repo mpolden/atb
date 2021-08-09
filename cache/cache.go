@@ -24,8 +24,8 @@ func New(expiryInterval time.Duration) *Cache {
 	entries := make(map[string]entry)
 	c := &Cache{entries: entries, now: time.Now}
 	go func() {
-		select {
-		case <-time.After(expiryInterval):
+		for {
+			time.Sleep(expiryInterval)
 			c.evictExpired()
 		}
 	}()

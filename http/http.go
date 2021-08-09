@@ -159,7 +159,7 @@ func (s *Server) DepartureHandler(w http.ResponseWriter, r *http.Request) (inter
 			Message: "Invalid nodeID",
 		}
 	}
-	busStops, hit, err := s.getBusStops(urlPrefix(r))
+	busStops, _, err := s.getBusStops(urlPrefix(r))
 	if err != nil {
 		return nil, &Error{
 			err:     err,
