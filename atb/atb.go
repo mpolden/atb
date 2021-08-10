@@ -2,8 +2,11 @@ package atb
 
 import (
 	"encoding/json"
+	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // DefaultURL is the default AtB API URL.
@@ -61,6 +64,16 @@ type Forecast struct {
 	Destination             string `json:"capDest"`
 }
 
+type busStopsRequest struct {
+	XMLName xml.Name `xml:"Envelope"`
+	Result  []byte   `xml:"Body>GetBusStopsListResponse>GetBusStopsListResult"`
+}
+
+type forecastRequest struct {
+	XMLName xml.Name `xml:"Envelope"`
+	Result  []byte   `xml:"Body>getUserRealTimeForecastByStopResponse>getUserRealTimeForecastByStopResult"`
+}
+
 // NewFromConfig creates a new client where name is the path to the config file.
 func NewFromConfig(name string) (Client, error) {
 	data, err := ioutil.ReadFile(name)
@@ -77,37 +90,40 @@ func NewFromConfig(name string) (Client, error) {
 	return client, nil
 }
 
-func (c *Client) post(r request, data interface{}) ([]byte, error) {
-	body, err := r.Body(data)
+func (c *Client) postXML(body string, dst interface{}) error {
+	resp, err := http.Post(c.URL, "application/soap+xml", strings.NewReader(body))
 	if err != nil {
-		return nil, err
-	}
-	resp, err := http.Post(c.URL, "application/soap+xml", body)
-	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	b, err := r.Decode(resp.Body)
-	if err != nil {
-		return nil, err
+	dec := xml.NewDecoder(resp.Body)
+	if err := dec.Decode(&dst); err != nil {
+		return err
 	}
-	return b, nil
+	return nil
 }
 
 // BusStops retrieves bus stops from AtBs API.
 func (c *Client) BusStops() (BusStops, error) {
-	values := struct {
-		Username string
-		Password string
-	}{c.Username, c.Password}
+	req := fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GetBusStopsList xmlns="http://miz.it/infotransit">
+      <auth>
+        <user>%s</user>
+        <password>%s</password>
+      </auth>
+    </GetBusStopsList>
+  </soap12:Body>
+</soap12:Envelope>`, c.Username, c.Password)
 
-	res, err := c.post(busStops, values)
-	if err != nil {
+	var stopsRequest busStopsRequest
+	if err := c.postXML(req, &stopsRequest); err != nil {
 		return BusStops{}, err
 	}
 
 	var stops BusStops
-	if err := json.Unmarshal(res, &stops); err != nil {
+	if err := json.Unmarshal(stopsRequest.Result, &stops); err != nil {
 		return BusStops{}, err
 	}
 	return stops, nil
@@ -115,19 +131,26 @@ func (c *Client) BusStops() (BusStops, error) {
 
 // Forecasts retrieves forecasts from AtBs API, using nodeID to identify the bus stop.
 func (c *Client) Forecasts(nodeID int) (Forecasts, error) {
-	values := struct {
-		Username string
-		Password string
-		NodeID   int
-	}{c.Username, c.Password, nodeID}
+	req := fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <getUserRealTimeForecastByStop xmlns="http://miz.it/infotransit">
+      <auth>
+        <user>%s</user>
+        <password>%s</password>
+      </auth>
+      <busStopId>%d</busStopId>
+    </getUserRealTimeForecastByStop>
+  </soap12:Body>
+</soap12:Envelope>`, c.Username, c.Password, nodeID)
 
-	res, err := c.post(forecast, values)
-	if err != nil {
+	var forecastRequest forecastRequest
+	if err := c.postXML(req, &forecastRequest); err != nil {
 		return Forecasts{}, err
 	}
 
 	var forecasts Forecasts
-	if err := json.Unmarshal(res, &forecasts); err != nil {
+	if err := json.Unmarshal(forecastRequest.Result, &forecasts); err != nil {
 		return Forecasts{}, err
 	}
 	return forecasts, nil
