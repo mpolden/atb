@@ -3,19 +3,30 @@
 ![Build Status](https://github.com/mpolden/atb/workflows/ci/badge.svg)
 
 A minimal API for bus data in Trondheim, Norway. This API proxies requests to
-the AtB public API and converts the responses into a sane JSON format.
+AtB/Entur APIs and converts the responses into a sane JSON format.
 
-Responses from AtBs public API are cached. By default bus stops will be cached
+Responses from the proxied APIs are cached. By default bus stops will be cached
 for 1 week and departures for 1 minute.
 
-If you want to setup this service yourself, you need to request access to the
-[SOAP API provided by
-AtB](https://www.atb.no/sanntid/apne-data-article5852-1381.html) (Norwegian).
-When granted access, you'll receive a username and password (see config example
-below).
+As of mid-August 2021 the SOAP-based AtB API appears to no longer return any
+departures. According to [this blog post on open
+data](https://beta.atb.no/blogg/apne-data-og-atb) it appears AtB now provides
+data through [Entur](https://developer.entur.org/).
 
-The API aims to be compatible with [BusBuddy](https://github.com/norrs/busbuddy)
-(which appears to be defunct).
+Version 1 of this API will remain implemented for now, but likely won't return
+any usable data.
+
+Version 2 has been implemented and proxies requests to Entur. Version 2 differs
+from version 1 in the following ways:
+
+* There is no version 2 variant of `/api/v1/busstops`. Use
+  https://stoppested.entur.org/ to find valid stop IDs.
+* Node/stop IDs have changed so the old ones (e.g. `16011376`) cannot be used in
+  version 2.
+* The `registeredDepartureTime` field may be omitted.
+
+Both version 1 and 2 of this API aims to be compatible with
+[BusBuddy](https://github.com/norrs/busbuddy) (which appears to be defunct).
 
 ## Usage
 
@@ -55,7 +66,31 @@ $ curl https://mpolden.no/atb/ | jq .
 {
   "urls": [
     "https://mpolden.no/atb/v1/busstops",
-    "https://mpolden.no/atb/v1/departures"
+    "https://mpolden.no/atb/v1/departures",
+    "https://mpolden.no/atb/v2/departures"
+  ]
+}
+```
+
+### `/api/v2/departures`
+
+List departures from the given bus stop, identified by a stop ID. Use
+https://stoppested.entur.org to find stop IDs, for example `43501` (the number
+part of `NSR:StopPlace:43501`) for Dronningens gate.
+
+```
+$ curl https://mpolden.no/atb/v2/departures/443501 | jq .
+{
+  "url": "https://mpolden.no/atb/v2/departures/43501",
+  "isGoingTowardsCentrum": true,
+  "departures": [
+    {
+      "line": "310",
+      "scheduledDepartureTime": "2021-08-11T23:16:29.000",
+      "destination": "Fannrem stasjon via Orkanger",
+      "isRealtimeData": true
+    },
+    ...
   ]
 }
 ```
