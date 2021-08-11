@@ -24,6 +24,7 @@ from version 1 in the following ways:
 * Node/stop IDs have changed so the old ones (e.g. `16011376`) cannot be used in
   version 2.
 * The `registeredDepartureTime` field may be omitted.
+* The `isGoingTowardsCentrum` field has moved to the departure object.
 
 Both version 1 and 2 of this API aims to be compatible with
 [BusBuddy](https://github.com/norrs/busbuddy) (which appears to be defunct).
@@ -78,17 +79,22 @@ List departures from the given bus stop, identified by a stop ID. Use
 https://stoppested.entur.org to find stop IDs, for example `43501` (the number
 part of `NSR:StopPlace:43501`) for Dronningens gate.
 
+Departures in any direction are included by default. Add the parameter
+`direction=inbound` or `direction=outbound` to filter departures towards, or
+away from, the city centre.
+
 ```
-$ curl https://mpolden.no/atb/v2/departures/443501 | jq .
+$ curl https://mpolden.no/atb/v2/departures/41613 | jq .
+
 {
-  "url": "https://mpolden.no/atb/v2/departures/43501",
-  "isGoingTowardsCentrum": true,
+  "url": "https://mpolden.no/atb/v2/departures/41613",
   "departures": [
     {
-      "line": "310",
-      "scheduledDepartureTime": "2021-08-11T23:16:29.000",
-      "destination": "Fannrem stasjon via Orkanger",
-      "isRealtimeData": true
+      "line": "71",
+      "scheduledDepartureTime": "2021-08-11T23:49:38.000",
+      "destination": "Dora",
+      "isRealtimeData": true,
+      "isGoingTowardsCentrum": true
     },
     ...
   ]
