@@ -50,7 +50,7 @@ type GeoJSONCollection struct {
 // Departures represents a list of departures, from a given bus stop.
 type Departures struct {
 	URL            string      `json:"url"`
-	TowardsCentrum bool        `json:"isGoingTowardsCentrum"`
+	TowardsCentrum *bool       `json:"isGoingTowardsCentrum,omitempty"`
 	Departures     []Departure `json:"departures"`
 }
 
@@ -61,6 +61,7 @@ type Departure struct {
 	ScheduledDepartureTime  string `json:"scheduledDepartureTime"`
 	Destination             string `json:"destination"`
 	IsRealtimeData          bool   `json:"isRealtimeData"`
+	TowardsCentrum          *bool  `json:"isGoingTowardsCentrum,omitempty"`
 }
 
 // Error represents an error in the API, which is returned to the user.
@@ -179,34 +180,39 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 		departures = append(departures, departure)
 	}
 	return Departures{
-		TowardsCentrum: towardsCentrum,
+		TowardsCentrum: &towardsCentrum,
 		Departures:     departures,
 	}, nil
 }
 
-func convertDepartures(enturDepartures []entur.Departure) Departures {
+func convertDepartures(enturDepartures []entur.Departure, direction string) Departures {
 	departures := make([]Departure, 0, len(enturDepartures))
-	inbound := false
 	const timeLayout = "2006-01-02T15:04:05.000"
 	for _, d := range enturDepartures {
+		if direction == inbound && !d.Inbound {
+			continue
+		}
+		if direction == outbound && d.Inbound {
+			continue
+		}
 		scheduledDepartureTime := d.ScheduledDepartureTime.Format(timeLayout)
 		registeredDepartureTime := ""
 		if !d.RegisteredDepartureTime.IsZero() {
 			registeredDepartureTime = d.RegisteredDepartureTime.Format(timeLayout)
 		}
+		towardsCentrum := d.Inbound
 		departure := Departure{
 			LineID:                  d.Line,
 			ScheduledDepartureTime:  scheduledDepartureTime,
 			RegisteredDepartureTime: registeredDepartureTime,
 			Destination:             d.Destination,
 			IsRealtimeData:          d.IsRealtime,
+			TowardsCentrum:          &towardsCentrum,
 		}
-		inbound = d.Inbound
 		departures = append(departures, departure)
 	}
 	return Departures{
-		TowardsCentrum: inbound,
-		Departures:     departures,
+		Departures: departures,
 	}
 }
 

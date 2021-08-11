@@ -37,13 +37,13 @@ func TestConvertBusStop(t *testing.T) {
 
 func TestConvertBusStops(t *testing.T) {
 	stops := atb.BusStops{
-		Stops: []atb.BusStop{atb.BusStop{
+		Stops: []atb.BusStop{{
 			NodeID:    "16011376",
 			Longitude: "1157514",
 			Latitude:  9202874,
 		}}}
 	expected := BusStops{
-		Stops: []BusStop{BusStop{
+		Stops: []BusStop{{
 			NodeID:    16011376,
 			Longitude: 10.398126,
 			Latitude:  63.415535,
@@ -116,13 +116,14 @@ func TestIsTowardsCentrum(t *testing.T) {
 
 func TestConvertForecasts(t *testing.T) {
 	forecasts := atb.Forecasts{
-		Nodes: []atb.NodeInfo{atb.NodeInfo{NodeID: "16011376"}},
-		Forecasts: []atb.Forecast{atb.Forecast{
+		Nodes: []atb.NodeInfo{{NodeID: "16011376"}},
+		Forecasts: []atb.Forecast{{
 			RegisteredDepartureTime: "26.02.2015 18:38",
 			ScheduledDepartureTime:  "26.02.2015 18:01",
 		}}}
-	expected := Departures{TowardsCentrum: true,
-		Departures: []Departure{Departure{
+	b := true
+	expected := Departures{TowardsCentrum: &b,
+		Departures: []Departure{{
 			RegisteredDepartureTime: "2015-02-26T18:38:00.000",
 			ScheduledDepartureTime:  "2015-02-26T18:01:00.000",
 			IsRealtimeData:          false,

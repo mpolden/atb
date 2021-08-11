@@ -96,7 +96,8 @@ func TestAPI(t *testing.T) {
 		// Show specific departure (v2)
 		{"/api/v2/departures", `{"status":400,"message":"Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs."}`, 400},
 		{"/api/v2/departures/", `{"status":400,"message":"Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs."}`, 400},
-		{"/api/v2/departures/42098", fmt.Sprintf(`{"url":"%s/api/v2/departures/42098","isGoingTowardsCentrum":false,"departures":[{"line":"21","scheduledDepartureTime":"2021-08-11T21:19:00.000","destination":"Pirbadet via sentrum","isRealtimeData":false}]}`, httpSrv.URL), 200},
+		{"/api/v2/departures/60890", fmt.Sprintf(`{"url":"%s/api/v2/departures/60890","departures":[{"line":"11","scheduledDepartureTime":"2021-08-11T23:33:09.000","destination":"Risvollan via sentrum","isRealtimeData":true,"isGoingTowardsCentrum":false},{"line":"3","scheduledDepartureTime":"2021-08-11T23:38:01.000","destination":"Hallset","isRealtimeData":true,"isGoingTowardsCentrum":true}]}`, httpSrv.URL), 200},
+		{"/api/v2/departures/60890?direction=inbound", fmt.Sprintf(`{"url":"%s/api/v2/departures/60890","departures":[{"line":"3","scheduledDepartureTime":"2021-08-11T23:38:01.000","destination":"Hallset","isRealtimeData":true,"isGoingTowardsCentrum":true}]}`, httpSrv.URL), 200},
 	}
 	for _, tt := range tests {
 		data, contentType, status, err := httpGet(httpSrv.URL + tt.url)
@@ -282,21 +283,37 @@ const forecastResponse = `<?xml version="1.0" encoding="utf-8"?>
 const enturResponse = `{
   "data": {
     "stopPlace": {
-      "id": "NSR:StopPlace:42098",
-      "name": "Ilsvika",
+      "id": "NSR:StopPlace:60890",
+      "name": "Ila",
       "estimatedCalls": [
         {
-          "realtime": false,
-          "expectedDepartureTime": "2021-08-11T21:19:00+0200",
+          "realtime": true,
+          "expectedDepartureTime": "2021-08-11T23:33:09+0200",
           "actualDepartureTime": null,
           "destinationDisplay": {
-            "frontText": "Pirbadet via sentrum"
+            "frontText": "Risvollan via sentrum"
           },
           "serviceJourney": {
             "journeyPattern": {
               "directionType": "outbound",
               "line": {
-                "publicCode": "21"
+                "publicCode": "11"
+              }
+            }
+          }
+        },
+        {
+          "realtime": true,
+          "expectedDepartureTime": "2021-08-11T23:38:01+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Hallset"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "inbound",
+              "line": {
+                "publicCode": "3"
               }
             }
           }

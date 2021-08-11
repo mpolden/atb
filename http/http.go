@@ -15,6 +15,11 @@ import (
 	"github.com/mpolden/atb/entur"
 )
 
+const (
+	inbound  = "inbound"
+	outbound = "outbound"
+)
+
 // Server represents an Server server.
 type Server struct {
 	ATB   *atb.Client
@@ -92,8 +97,13 @@ func (s *Server) atbDepartures(urlPrefix string, nodeID int) (Departures, bool, 
 	return departures, hit, nil
 }
 
-func (s *Server) enturDepartures(urlPrefix string, stopID int) (Departures, bool, error) {
-	cacheKey := strconv.Itoa(stopID)
+func (s *Server) enturDepartures(urlPrefix string, stopID int, direction string) (Departures, bool, error) {
+	var cacheKey string
+	if direction == inbound || direction == outbound {
+		cacheKey = fmt.Sprintf("%d-%s", stopID, direction)
+	} else {
+		cacheKey = fmt.Sprintf("%d", stopID)
+	}
 	cached, hit := s.cache.Get(cacheKey)
 	if hit {
 		return cached.(Departures), hit, nil
@@ -102,7 +112,7 @@ func (s *Server) enturDepartures(urlPrefix string, stopID int) (Departures, bool
 	if err != nil {
 		return Departures{}, hit, err
 	}
-	departures := convertDepartures(enturDepartures)
+	departures := convertDepartures(enturDepartures, direction)
 	departures.URL = fmt.Sprintf("%s/api/v2/departures/%d", urlPrefix, stopID)
 	s.cache.Set(cacheKey, departures, s.ttl.departures)
 	return departures, hit, nil
@@ -214,12 +224,13 @@ func (s *Server) DepartureHandlerV2(w http.ResponseWriter, r *http.Request) (int
 			Message: "Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs.",
 		}
 	}
-	departures, hit, err := s.enturDepartures(urlPrefix(r), stopID)
+	direction := r.URL.Query().Get("direction")
+	departures, hit, err := s.enturDepartures(urlPrefix(r), stopID, direction)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
 			Status:  http.StatusInternalServerError,
-			Message: "Failed to get departures from AtB",
+			Message: "Failed to get departures from Entur",
 		}
 	}
 	s.setCacheHeader(w, hit)
