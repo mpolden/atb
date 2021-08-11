@@ -1,0 +1,90 @@
+{
+  "data": {
+    "stopPlace": {
+      "id": "NSR:StopPlace:42098",
+      "name": "Ilsvika",
+      "estimatedCalls": [
+        {
+          "realtime": false,
+          "expectedDepartureTime": "2021-08-11T21:19:00+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Pirbadet via sentrum"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "outbound",
+              "line": {
+                "publicCode": "21"
+              }
+            }
+          }
+        },
+        {
+          "realtime": true,
+          "expectedDepartureTime": "2021-08-11T22:19:00+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Pirbadet via sentrum"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "outbound",
+              "line": {
+                "publicCode": "21"
+              }
+            }
+          }
+        },
+        {
+          "realtime": false,
+          "expectedDepartureTime": "2021-08-11T23:19:00+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Pirbadet via sentrum"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "outbound",
+              "line": {
+                "publicCode": "21"
+              }
+            }
+          }
+        },
+        {
+          "realtime": false,
+          "expectedDepartureTime": "2021-08-12T00:19:00+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Pirbadet via sentrum"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "outbound",
+              "line": {
+                "publicCode": "21"
+              }
+            }
+          }
+        },
+        {
+          "realtime": false,
+          "expectedDepartureTime": "2021-08-12T06:13:00+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Pirbadet via sentrum"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "outbound",
+              "line": {
+                "publicCode": "21"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
