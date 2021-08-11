@@ -321,6 +321,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/api/v1/busstops/", appHandler(s.BusStopHandler))
 	mux.Handle("/api/v1/departures", appHandler(s.DeparturesHandler))
 	mux.Handle("/api/v1/departures/", appHandler(s.DepartureHandler))
+	mux.Handle("/api/v2/departures", appHandler(s.DepartureHandlerV2))
 	mux.Handle("/api/v2/departures/", appHandler(s.DepartureHandlerV2))
 	mux.Handle("/", appHandler(s.DefaultHandler))
 	return requestFilter(mux, s.CORS)

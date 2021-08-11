@@ -94,6 +94,7 @@ func TestAPI(t *testing.T) {
 		{"/api/v1/departures/42", `{"status":404,"message":"Unknown bus stop"}`, 404},
 		{"/api/v1/departures/16011376", fmt.Sprintf(`{"url":"%s/api/v1/departures/16011376","isGoingTowardsCentrum":true,"departures":[{"line":"6","registeredDepartureTime":"2015-02-26T18:38:00.000","scheduledDepartureTime":"2015-02-26T18:01:00.000","destination":"Munkegata M5","isRealtimeData":true}]}`, httpSrv.URL), 200},
 		// Show specific departure (v2)
+		{"/api/v2/departures", `{"status":400,"message":"Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs."}`, 400},
 		{"/api/v2/departures/", `{"status":400,"message":"Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs."}`, 400},
 		{"/api/v2/departures/42098", fmt.Sprintf(`{"url":"%s/api/v2/departures/42098","isGoingTowardsCentrum":false,"departures":[{"line":"21","scheduledDepartureTime":"2021-08-11T21:19:00.000","destination":"Pirbadet via sentrum","isRealtimeData":false}]}`, httpSrv.URL), 200},
 	}
