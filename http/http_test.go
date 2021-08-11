@@ -12,22 +12,29 @@ import (
 	"time"
 
 	"github.com/mpolden/atb/atb"
+	"github.com/mpolden/atb/entur"
 )
 
-func atbTestServer() *httptest.Server {
+func apiTestServer() *httptest.Server {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		b, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			panic(err)
-		}
-		xml := string(b)
-		w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
-		if strings.Contains(xml, "GetBusStopsList") {
-			fmt.Fprint(w, busStopsResponse)
-		} else if strings.Contains(xml, "getUserRealTimeForecastByStop") {
-			fmt.Fprint(w, forecastResponse)
+		isSOAP := r.Header.Get("Content-Type") == "application/soap+xml"
+		if isSOAP {
+			b, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				panic(err)
+			}
+			xml := string(b)
+			w.Header().Set("Content-Type", "application/soap+xml; charset=utf-8")
+			if strings.Contains(xml, "GetBusStopsList") {
+				fmt.Fprint(w, busStopsResponse)
+			} else if strings.Contains(xml, "getUserRealTimeForecastByStop") {
+				fmt.Fprint(w, forecastResponse)
+			} else {
+				panic("unknown request body: " + xml)
+			}
 		} else {
-			panic("unknown request body: " + xml)
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, enturResponse)
 		}
 	}
 	mux := http.NewServeMux()
@@ -35,11 +42,12 @@ func atbTestServer() *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
-func testServers() (*httptest.Server, *httptest.Server) {
-	atbServer := atbTestServer()
-	atb := atb.Client{URL: atbServer.URL}
-	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	return atbServer, httptest.NewServer(api.Handler())
+func testServers() (*httptest.Server, *Server) {
+	apiServer := apiTestServer()
+	atb := &atb.Client{URL: apiServer.URL}
+	entur := &entur.Client{URL: apiServer.URL}
+	server := New(atb, entur, 168*time.Hour, 1*time.Minute, false)
+	return apiServer, server
 }
 
 func httpGet(url string) (string, string, int, error) {
@@ -56,9 +64,10 @@ func httpGet(url string) (string, string, int, error) {
 }
 
 func TestAPI(t *testing.T) {
-	atbServer, server := testServers()
-	defer atbServer.Close()
-	defer server.Close()
+	apiServer, server := testServers()
+	httpSrv := httptest.NewServer(server.Handler())
+	defer apiServer.Close()
+	defer httpSrv.Close()
 	log.SetOutput(ioutil.Discard)
 
 	var tests = []struct {
@@ -69,24 +78,27 @@ func TestAPI(t *testing.T) {
 		// Unknown resources
 		{"/not-found", `{"status":404,"message":"Resource not found"}`, 404},
 		// List know URLs
-		{"/", fmt.Sprintf(`{"urls":["%s/api/v1/busstops","%s/api/v1/departures"]}`, server.URL, server.URL), 200},
+		{"/", fmt.Sprintf(`{"urls":["%s/api/v1/busstops","%s/api/v1/departures","%s/api/v2/departures"]}`, httpSrv.URL, httpSrv.URL, httpSrv.URL), 200},
 		// List all bus stops
-		{"/api/v1/busstops", fmt.Sprintf(`{"stops":[{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}]}`, server.URL), 200},
+		{"/api/v1/busstops", fmt.Sprintf(`{"stops":[{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}]}`, httpSrv.URL), 200},
 		// List all departures
-		{"/api/v1/departures", fmt.Sprintf(`{"urls":["%s/api/v1/departures/16011376"]}`, server.URL), 200},
+		{"/api/v1/departures", fmt.Sprintf(`{"urls":["%s/api/v1/departures/16011376"]}`, httpSrv.URL), 200},
 		// Show specific bus stop
 		{"/api/v1/busstops/", `{"status":400,"message":"Invalid nodeID"}`, 400},
 		{"/api/v1/busstops/foo", `{"status":400,"message":"Invalid nodeID"}`, 400},
 		{"/api/v1/busstops/42", `{"status":404,"message":"Unknown bus stop"}`, 404},
-		{"/api/v1/busstops/16011376", fmt.Sprintf(`{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}`, server.URL), 200},
+		{"/api/v1/busstops/16011376", fmt.Sprintf(`{"url":"%s/api/v1/busstops/16011376","stopId":100633,"nodeId":16011376,"description":"Prof. Brochs gt","longitude":10.398126,"latitude":63.415535,"mobileCode":"16011376 (Prof.)","mobileName":"Prof. (16011376)"}`, httpSrv.URL), 200},
 		// Show specific departure
 		{"/api/v1/departures/", `{"status":400,"message":"Invalid nodeID"}`, 400},
 		{"/api/v1/departures/foo", `{"status":400,"message":"Invalid nodeID"}`, 400},
 		{"/api/v1/departures/42", `{"status":404,"message":"Unknown bus stop"}`, 404},
-		{"/api/v1/departures/16011376", fmt.Sprintf(`{"url":"%s/api/v1/departures/16011376","isGoingTowardsCentrum":true,"departures":[{"line":"6","registeredDepartureTime":"2015-02-26T18:38:00.000","scheduledDepartureTime":"2015-02-26T18:01:00.000","destination":"Munkegata M5","isRealtimeData":true}]}`, server.URL), 200},
+		{"/api/v1/departures/16011376", fmt.Sprintf(`{"url":"%s/api/v1/departures/16011376","isGoingTowardsCentrum":true,"departures":[{"line":"6","registeredDepartureTime":"2015-02-26T18:38:00.000","scheduledDepartureTime":"2015-02-26T18:01:00.000","destination":"Munkegata M5","isRealtimeData":true}]}`, httpSrv.URL), 200},
+		// Show specific departure (v2)
+		{"/api/v2/departures/", `{"status":400,"message":"Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs."}`, 400},
+		{"/api/v2/departures/42098", fmt.Sprintf(`{"url":"%s/api/v2/departures/42098","isGoingTowardsCentrum":false,"departures":[{"line":"21","scheduledDepartureTime":"2021-08-11T21:19:00.000","destination":"Pirbadet via sentrum","isRealtimeData":false}]}`, httpSrv.URL), 200},
 	}
 	for _, tt := range tests {
-		data, contentType, status, err := httpGet(server.URL + tt.url)
+		data, contentType, status, err := httpGet(httpSrv.URL + tt.url)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,8 +122,8 @@ func TestURLPrefix(t *testing.T) {
 		{&http.Request{Host: "foo"}, "http://foo"},
 		{&http.Request{Host: "", RemoteAddr: "127.0.0.1"}, "http://127.0.0.1"},
 		{&http.Request{Host: "bar", TLS: &tls.ConnectionState{}}, "https://bar"},
-		{&http.Request{Host: "baz", Header: map[string][]string{"X-Forwarded-Proto": []string{"https"}}}, "https://baz"},
-		{&http.Request{Host: "qux", Header: map[string][]string{"X-Forwarded-Proto": []string{}}}, "http://qux"},
+		{&http.Request{Host: "baz", Header: map[string][]string{"X-Forwarded-Proto": {"https"}}}, "https://baz"},
+		{&http.Request{Host: "qux", Header: map[string][]string{"X-Forwarded-Proto": {}}}, "http://qux"},
 	}
 	for _, tt := range tests {
 		prefix := urlPrefix(tt.in)
@@ -122,15 +134,13 @@ func TestURLPrefix(t *testing.T) {
 }
 
 func TestGetBusStops(t *testing.T) {
-	server := atbTestServer()
-	defer server.Close()
-	atb := atb.Client{URL: server.URL}
-	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, _, err := api.getBusStops("")
+	apiServer, server := testServers()
+	defer apiServer.Close()
+	_, _, err := server.getBusStops("")
 	if err != nil {
 		t.Fatal(err)
 	}
-	cached, ok := api.cache.Get("stops")
+	cached, ok := server.cache.Get("stops")
 	if !ok {
 		t.Fatal("Expected true")
 	}
@@ -147,18 +157,16 @@ func TestGetBusStops(t *testing.T) {
 }
 
 func TestGetBusStopsCache(t *testing.T) {
-	server := atbTestServer()
-	defer server.Close()
-	atb := atb.Client{URL: server.URL}
-	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, hit, err := api.getBusStops("")
+	apiServer, server := testServers()
+	defer apiServer.Close()
+	_, hit, err := server.getBusStops("")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hit {
 		t.Error("Expected false")
 	}
-	_, hit, err = api.getBusStops("")
+	_, hit, err = server.getBusStops("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,15 +176,13 @@ func TestGetBusStopsCache(t *testing.T) {
 }
 
 func TestGetDepartures(t *testing.T) {
-	server := atbTestServer()
-	defer server.Close()
-	atb := atb.Client{URL: server.URL}
-	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, _, err := api.getDepartures("", 16011376)
+	apiServer, server := testServers()
+	defer apiServer.Close()
+	_, _, err := server.atbDepartures("", 16011376)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cached, ok := api.cache.Get("16011376")
+	cached, ok := server.cache.Get("16011376")
 	if !ok {
 		t.Fatal("Expected true")
 	}
@@ -190,18 +196,16 @@ func TestGetDepartures(t *testing.T) {
 }
 
 func TestGetDeparturesCache(t *testing.T) {
-	server := atbTestServer()
-	defer server.Close()
-	atb := atb.Client{URL: server.URL}
-	api := New(atb, 168*time.Hour, 1*time.Minute, false)
-	_, hit, err := api.getDepartures("", 16011376)
+	apiServer, server := testServers()
+	defer apiServer.Close()
+	_, hit, err := server.atbDepartures("", 16011376)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hit {
 		t.Error("Expected false")
 	}
-	_, hit, err = api.getDepartures("", 16011376)
+	_, hit, err = server.atbDepartures("", 16011376)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,3 +277,30 @@ const forecastResponse = `<?xml version="1.0" encoding="utf-8"?>
     </getUserRealTimeForecastByStopResponse>
   </soap12:Body>
 </soap12:Envelope>`
+
+const enturResponse = `{
+  "data": {
+    "stopPlace": {
+      "id": "NSR:StopPlace:42098",
+      "name": "Ilsvika",
+      "estimatedCalls": [
+        {
+          "realtime": false,
+          "expectedDepartureTime": "2021-08-11T21:19:00+0200",
+          "actualDepartureTime": null,
+          "destinationDisplay": {
+            "frontText": "Pirbadet via sentrum"
+          },
+          "serviceJourney": {
+            "journeyPattern": {
+              "directionType": "outbound",
+              "line": {
+                "publicCode": "21"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}`

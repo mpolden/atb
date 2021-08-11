@@ -12,13 +12,15 @@ import (
 
 	"github.com/mpolden/atb/atb"
 	"github.com/mpolden/atb/cache"
+	"github.com/mpolden/atb/entur"
 )
 
 // Server represents an Server server.
 type Server struct {
-	Client atb.Client
-	CORS   bool
-	cache  *cache.Cache
+	ATB   *atb.Client
+	Entur *entur.Client
+	CORS  bool
+	cache *cache.Cache
 	ttl
 }
 
@@ -50,7 +52,7 @@ func (s *Server) getBusStops(urlPrefix string) (BusStops, bool, error) {
 	if hit {
 		return cached.(BusStops), hit, nil
 	}
-	atbBusStops, err := s.Client.BusStops()
+	atbBusStops, err := s.ATB.BusStops()
 	if err != nil {
 		return BusStops{}, hit, err
 	}
@@ -71,13 +73,13 @@ func (s *Server) getBusStops(urlPrefix string) (BusStops, bool, error) {
 	return busStops, hit, nil
 }
 
-func (s *Server) getDepartures(urlPrefix string, nodeID int) (Departures, bool, error) {
+func (s *Server) atbDepartures(urlPrefix string, nodeID int) (Departures, bool, error) {
 	cacheKey := strconv.Itoa(nodeID)
 	cached, hit := s.cache.Get(cacheKey)
 	if hit {
 		return cached.(Departures), hit, nil
 	}
-	forecasts, err := s.Client.Forecasts(nodeID)
+	forecasts, err := s.ATB.Forecasts(nodeID)
 	if err != nil {
 		return Departures{}, hit, err
 	}
@@ -86,6 +88,22 @@ func (s *Server) getDepartures(urlPrefix string, nodeID int) (Departures, bool, 
 		return Departures{}, hit, err
 	}
 	departures.URL = fmt.Sprintf("%s/api/v1/departures/%d", urlPrefix, nodeID)
+	s.cache.Set(cacheKey, departures, s.ttl.departures)
+	return departures, hit, nil
+}
+
+func (s *Server) enturDepartures(urlPrefix string, stopID int) (Departures, bool, error) {
+	cacheKey := strconv.Itoa(stopID)
+	cached, hit := s.cache.Get(cacheKey)
+	if hit {
+		return cached.(Departures), hit, nil
+	}
+	enturDepartures, err := s.Entur.Departures(stopID)
+	if err != nil {
+		return Departures{}, hit, err
+	}
+	departures := convertDepartures(enturDepartures)
+	departures.URL = fmt.Sprintf("%s/api/v2/departures/%d", urlPrefix, stopID)
 	s.cache.Set(cacheKey, departures, s.ttl.departures)
 	return departures, hit, nil
 }
@@ -174,7 +192,29 @@ func (s *Server) DepartureHandler(w http.ResponseWriter, r *http.Request) (inter
 			Message: "Unknown bus stop",
 		}
 	}
-	departures, hit, err := s.getDepartures(urlPrefix(r), nodeID)
+	departures, hit, err := s.atbDepartures(urlPrefix(r), nodeID)
+	if err != nil {
+		return nil, &Error{
+			err:     err,
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to get departures from AtB",
+		}
+	}
+	s.setCacheHeader(w, hit)
+	return departures, nil
+}
+
+// DepartureHandlerV2 is a handler which retrieves departures for a given bus stop through Entur.
+func (s *Server) DepartureHandlerV2(w http.ResponseWriter, r *http.Request) (interface{}, *Error) {
+	stopID, err := strconv.Atoi(filepath.Base(r.URL.Path))
+	if err != nil {
+		return nil, &Error{
+			err:     err,
+			Status:  http.StatusBadRequest,
+			Message: "Invalid stop ID. Use https://stoppested.entur.org/ to find stop IDs.",
+		}
+	}
+	departures, hit, err := s.enturDepartures(urlPrefix(r), stopID)
 	if err != nil {
 		return nil, &Error{
 			err:     err,
@@ -215,21 +255,23 @@ func (s *Server) DefaultHandler(w http.ResponseWriter, r *http.Request) (interfa
 	prefix := urlPrefix(r)
 	busStopsURL := fmt.Sprintf("%s/api/v1/busstops", prefix)
 	departuresURL := fmt.Sprintf("%s/api/v1/departures", prefix)
+	departuresV2URL := fmt.Sprintf("%s/api/v2/departures", prefix)
 	return struct {
 		URLs []string `json:"urls"`
 	}{
-		[]string{busStopsURL, departuresURL},
+		[]string{busStopsURL, departuresURL, departuresV2URL},
 	}, nil
 }
 
-// New returns a new Server using client to communicate with AtB. stopTTL and departureTTL control the cache TTL bus
-// stops and departures.
-func New(client atb.Client, stopTTL, departureTTL time.Duration, cors bool) Server {
+// New returns a new Server using given clients to communicate with AtB and Entur. stopTTL and departureTTL control the
+// cache TTL bus stops and departures.
+func New(atb *atb.Client, entur *entur.Client, stopTTL, departureTTL time.Duration, cors bool) *Server {
 	cache := cache.New(time.Minute)
-	return Server{
-		Client: client,
-		CORS:   cors,
-		cache:  cache,
+	return &Server{
+		ATB:   atb,
+		Entur: entur,
+		CORS:  cors,
+		cache: cache,
 		ttl: ttl{
 			stops:      stopTTL,
 			departures: departureTTL,
@@ -279,6 +321,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("/api/v1/busstops/", appHandler(s.BusStopHandler))
 	mux.Handle("/api/v1/departures", appHandler(s.DeparturesHandler))
 	mux.Handle("/api/v1/departures/", appHandler(s.DepartureHandler))
+	mux.Handle("/api/v2/departures/", appHandler(s.DepartureHandlerV2))
 	mux.Handle("/", appHandler(s.DefaultHandler))
 	return requestFilter(mux, s.CORS)
 }

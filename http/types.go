@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mpolden/atb/atb"
+	"github.com/mpolden/atb/entur"
 )
 
 // BusStops represents a list of bus stops.
@@ -56,7 +57,7 @@ type Departures struct {
 // Departure represents a single departure in a given direction.
 type Departure struct {
 	LineID                  string `json:"line"`
-	RegisteredDepartureTime string `json:"registeredDepartureTime"`
+	RegisteredDepartureTime string `json:"registeredDepartureTime,omitempty"`
 	ScheduledDepartureTime  string `json:"scheduledDepartureTime"`
 	Destination             string `json:"destination"`
 	IsRealtimeData          bool   `json:"isRealtimeData"`
@@ -181,6 +182,32 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 		TowardsCentrum: towardsCentrum,
 		Departures:     departures,
 	}, nil
+}
+
+func convertDepartures(enturDepartures []entur.Departure) Departures {
+	departures := make([]Departure, 0, len(enturDepartures))
+	inbound := false
+	const timeLayout = "2006-01-02T15:04:05.000"
+	for _, d := range enturDepartures {
+		scheduledDepartureTime := d.ScheduledDepartureTime.Format(timeLayout)
+		registeredDepartureTime := ""
+		if !d.RegisteredDepartureTime.IsZero() {
+			registeredDepartureTime = d.RegisteredDepartureTime.Format(timeLayout)
+		}
+		departure := Departure{
+			LineID:                  d.Line,
+			ScheduledDepartureTime:  scheduledDepartureTime,
+			RegisteredDepartureTime: registeredDepartureTime,
+			Destination:             d.Destination,
+			IsRealtimeData:          d.IsRealtime,
+		}
+		inbound = d.Inbound
+		departures = append(departures, departure)
+	}
+	return Departures{
+		TowardsCentrum: inbound,
+		Departures:     departures,
+	}
 }
 
 // GeoJSON converts BusStop into the GeoJSON format.

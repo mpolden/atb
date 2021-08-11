@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mpolden/atb/atb"
+	"github.com/mpolden/atb/entur"
 	"github.com/mpolden/atb/http"
 )
 
@@ -30,12 +31,12 @@ func main() {
 	cors := flag.Bool("x", false, "Allow requests from other domains")
 	flag.Parse()
 
-	client, err := atb.NewFromConfig(*config)
+	atb, err := atb.NewFromConfig(*config)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	server := http.New(client, mustParseDuration(*stopTTL), mustParseDuration(*departureTTL), *cors)
+	entur := entur.New("")
+	server := http.New(atb, entur, mustParseDuration(*stopTTL), mustParseDuration(*departureTTL), *cors)
 
 	log.Printf("Listening on %s", *listen)
 	if err := server.ListenAndServe(*listen); err != nil {

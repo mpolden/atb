@@ -75,19 +75,19 @@ type forecastRequest struct {
 }
 
 // NewFromConfig creates a new client where name is the path to the config file.
-func NewFromConfig(name string) (Client, error) {
+func NewFromConfig(name string) (*Client, error) {
 	data, err := ioutil.ReadFile(name)
 	if err != nil {
-		return Client{}, err
+		return nil, err
 	}
 	var client Client
 	if err := json.Unmarshal(data, &client); err != nil {
-		return Client{}, err
+		return nil, err
 	}
 	if client.URL == "" {
 		client.URL = DefaultURL
 	}
-	return client, nil
+	return &client, nil
 }
 
 func (c *Client) postXML(body string, dst interface{}) error {
