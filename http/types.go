@@ -185,16 +185,10 @@ func convertForecasts(f atb.Forecasts) (Departures, error) {
 	}, nil
 }
 
-func convertDepartures(enturDepartures []entur.Departure, direction string) Departures {
+func convertDepartures(enturDepartures []entur.Departure) Departures {
 	departures := make([]Departure, 0, len(enturDepartures))
 	const timeLayout = "2006-01-02T15:04:05.000"
 	for _, d := range enturDepartures {
-		if direction == inbound && !d.Inbound {
-			continue
-		}
-		if direction == outbound && d.Inbound {
-			continue
-		}
 		scheduledDepartureTime := d.ScheduledDepartureTime.Format(timeLayout)
 		registeredDepartureTime := ""
 		if !d.RegisteredDepartureTime.IsZero() {

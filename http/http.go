@@ -51,6 +51,25 @@ func urlPrefix(r *http.Request) string {
 	return url.String()
 }
 
+func filterDepartures(departures []Departure, direction string) []Departure {
+	switch direction {
+	case inbound, outbound:
+		copy := make([]Departure, 0, len(departures))
+		for _, d := range departures {
+			towardsCentrum := *d.TowardsCentrum
+			if direction == inbound && !towardsCentrum {
+				continue
+			}
+			if direction == outbound && towardsCentrum {
+				continue
+			}
+			copy = append(copy, d)
+		}
+		return copy
+	}
+	return departures
+}
+
 func (s *Server) getBusStops(urlPrefix string) (BusStops, bool, error) {
 	const cacheKey = "stops"
 	cached, hit := s.cache.Get(cacheKey)
@@ -98,23 +117,21 @@ func (s *Server) atbDepartures(urlPrefix string, nodeID int) (Departures, bool, 
 }
 
 func (s *Server) enturDepartures(urlPrefix string, stopID int, direction string) (Departures, bool, error) {
-	var cacheKey string
-	if direction == inbound || direction == outbound {
-		cacheKey = fmt.Sprintf("%d-%s", stopID, direction)
-	} else {
-		cacheKey = fmt.Sprintf("%d", stopID)
-	}
+	cacheKey := strconv.Itoa(stopID)
 	cached, hit := s.cache.Get(cacheKey)
+	var departures Departures
 	if hit {
-		return cached.(Departures), hit, nil
+		departures = cached.(Departures)
+	} else {
+		enturDepartures, err := s.Entur.Departures(stopID)
+		if err != nil {
+			return Departures{}, hit, err
+		}
+		departures = convertDepartures(enturDepartures)
+		departures.URL = fmt.Sprintf("%s/api/v2/departures/%d", urlPrefix, stopID)
+		s.cache.Set(cacheKey, departures, s.ttl.departures)
 	}
-	enturDepartures, err := s.Entur.Departures(stopID)
-	if err != nil {
-		return Departures{}, hit, err
-	}
-	departures := convertDepartures(enturDepartures, direction)
-	departures.URL = fmt.Sprintf("%s/api/v2/departures/%d", urlPrefix, stopID)
-	s.cache.Set(cacheKey, departures, s.ttl.departures)
+	departures.Departures = filterDepartures(departures.Departures, direction)
 	return departures, hit, nil
 }
 
