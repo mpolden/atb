@@ -8,21 +8,22 @@ AtB/Entur APIs and converts the responses into a sane JSON format.
 Responses from the proxied APIs are cached. By default bus stops will be cached
 for 1 week and departures for 1 minute.
 
-As of mid-August 2021 the SOAP-based AtB API appears to no longer return any
-departures. According to [this blog post on open
-data](https://beta.atb.no/blogg/apne-data-og-atb) it appears AtB now provides
-data through [Entur](https://developer.entur.org/).
+As of mid-August 2021 the SOAP-based AtB API no longer returns any departure
+data. According to [this blog post on open
+data](https://beta.atb.no/blogg/apne-data-og-atb) it appears the preferred API
+is now [Entur](https://developer.entur.org/).
 
 Version 1 of this API will remain implemented for now, but likely won't return
 any usable data.
 
-Version 2 has been implemented and proxies requests to Entur. Version 2 differs
-from version 1 in the following ways:
+Version 2 has been implemented and proxies requests to Entur. These are the
+changes in version 2:
 
 * There is no version 2 variant of `/api/v1/busstops`. Use
   https://stoppested.entur.org/ to find valid stop IDs.
-* Node/stop IDs have changed so the old ones (e.g. `16011376`) cannot be used in
-  version 2.
+* Entur uses different stop IDs so old ones, such as `16011376`, cannot be used
+  in version 2. A stop includes departures in both directions by default so
+  there is no longer a unique stop for each direction.
 * The `registeredDepartureTime` field may be omitted.
 * The `isGoingTowardsCentrum` field has moved to the departure object.
 
@@ -76,15 +77,19 @@ $ curl https://mpolden.no/atb/ | jq .
 ### `/api/v2/departures`
 
 List departures from the given bus stop, identified by a stop ID. Use
-https://stoppested.entur.org to find stop IDs, for example `43501` (the number
-part of `NSR:StopPlace:43501`) for Dronningens gate.
+https://stoppested.entur.org to find stop IDs, for example `41613` (the number
+part of `NSR:StopPlace:41613`) for Prinsens gate.
 
-Departures in any direction are included by default. Add the parameter
+Departures traveling in any direction are included by default. Add the parameter
 `direction=inbound` or `direction=outbound` to filter departures towards, or
 away from, the city centre.
 
+Note that the claimed direction is questionable in some cases so inspect the
+responses to decide whether `inbound` or `outbound` makes sense for your use
+case.
+
 ```
-$ curl https://mpolden.no/atb/v2/departures/41613 | jq .
+$ curl 'https://mpolden.no/atb/v2/departures/41613?direction=inbound' | jq .
 
 {
   "url": "https://mpolden.no/atb/v2/departures/41613",
