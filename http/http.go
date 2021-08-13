@@ -123,7 +123,7 @@ func (s *Server) enturDepartures(urlPrefix string, stopID int, direction string)
 	if hit {
 		departures = cached.(Departures)
 	} else {
-		enturDepartures, err := s.Entur.Departures(stopID)
+		enturDepartures, err := s.Entur.Departures(10, stopID)
 		if err != nil {
 			return Departures{}, hit, err
 		}

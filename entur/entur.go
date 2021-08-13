@@ -74,9 +74,9 @@ type line struct {
 }
 
 // Departures returns departures from the given stop ID. Use https://stoppested.entur.org/ to determine stop IDs.
-func (c *Client) Departures(stopID int) ([]Departure, error) {
+func (c *Client) Departures(count, stopID int) ([]Departure, error) {
 	// https://api.entur.io/journey-planner/v2/ide/ for query testing
-	query := fmt.Sprintf(`{"query":"{stopPlace(id:\"NSR:StopPlace:%d\"){id name estimatedCalls{realtime expectedDepartureTime actualDepartureTime destinationDisplay{frontText}serviceJourney{journeyPattern{directionType line{publicCode}}}}}}"}`, stopID)
+	query := fmt.Sprintf(`{"query":"{stopPlace(id:\"NSR:StopPlace:%d\"){id name estimatedCalls(numberOfDepartures:%d){realtime expectedDepartureTime actualDepartureTime destinationDisplay{frontText}serviceJourney{journeyPattern{directionType line{publicCode}}}}}}"}`, stopID, count)
 	req, err := http.NewRequest("POST", c.URL, strings.NewReader(query))
 	if err != nil {
 		return nil, err
