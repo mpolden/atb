@@ -24,7 +24,7 @@ func TestGetBusStops(t *testing.T) {
 	atb := Client{URL: server.URL}
 	expected := BusStops{
 		Stops: []BusStop{
-			BusStop{
+			{
 				StopID:      100633,
 				NodeID:      "16011376",
 				Description: "Prof. Brochs gt",
@@ -52,7 +52,7 @@ func TestGetRealTimeForecast(t *testing.T) {
 	expected := Forecasts{
 		Total: 1,
 		Nodes: []NodeInfo{
-			NodeInfo{
+			{
 				Name:              "AtB",
 				NodeID:            "16011376",
 				NodeName:          "Prof.",
@@ -64,7 +64,7 @@ func TestGetRealTimeForecast(t *testing.T) {
 			},
 		},
 		Forecasts: []Forecast{
-			Forecast{
+			{
 				LineID:                  "6",
 				LineDescription:         "6",
 				RegisteredDepartureTime: "26.02.2015 18:38",
