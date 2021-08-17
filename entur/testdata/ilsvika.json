@@ -12,6 +12,9 @@
             "frontText": "Pirbadet via sentrum"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "outbound",
               "line": {
@@ -28,6 +31,9 @@
             "frontText": "Pirbadet via sentrum"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "outbound",
               "line": {
@@ -44,6 +50,9 @@
             "frontText": "Pirbadet via sentrum"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "outbound",
               "line": {
@@ -60,6 +69,9 @@
             "frontText": "Pirbadet via sentrum"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "outbound",
               "line": {
@@ -76,6 +88,9 @@
             "frontText": "Pirbadet via sentrum"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "outbound",
               "line": {

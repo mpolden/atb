@@ -294,6 +294,9 @@ const enturResponse = `{
             "frontText": "Risvollan via sentrum"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "outbound",
               "line": {
@@ -310,6 +313,9 @@ const enturResponse = `{
             "frontText": "Hallset"
           },
           "serviceJourney": {
+            "operator": {
+              "id": "ATB:Operator:171"
+            },
             "journeyPattern": {
               "directionType": "inbound",
               "line": {

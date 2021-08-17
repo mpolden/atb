@@ -61,7 +61,12 @@ type destinationDisplay struct {
 }
 
 type serviceJourney struct {
+	Operator operator `json:"operator"`
 	JourneyPattern journeyPattern `json:"journeyPattern"`
+}
+
+type operator struct {
+	Id string `json:"id"`
 }
 
 type journeyPattern struct {
@@ -76,7 +81,7 @@ type line struct {
 // Departures returns departures from the given stop ID. Use https://stoppested.entur.org/ to determine stop IDs.
 func (c *Client) Departures(count, stopID int) ([]Departure, error) {
 	// https://api.entur.io/journey-planner/v2/ide/ for query testing
-	query := fmt.Sprintf(`{"query":"{stopPlace(id:\"NSR:StopPlace:%d\"){id name estimatedCalls(numberOfDepartures:%d){realtime expectedDepartureTime actualDepartureTime destinationDisplay{frontText}serviceJourney{journeyPattern{directionType line{publicCode}}}}}}"}`, stopID, count)
+	query := fmt.Sprintf(`{"query":"{stopPlace(id:\"NSR:StopPlace:%d\"){id name estimatedCalls(numberOfDepartures:%d){realtime expectedDepartureTime actualDepartureTime destinationDisplay{frontText}serviceJourney{operator{id}journeyPattern{directionType line{publicCode}}}}}}"}`, stopID, count)
 	req, err := http.NewRequest("POST", c.URL, strings.NewReader(query))
 	if err != nil {
 		return nil, err
@@ -101,9 +106,13 @@ func parseDepartures(jsonData []byte) ([]Departure, error) {
 	if err := json.Unmarshal(jsonData, &r); err != nil {
 		return nil, err
 	}
+	const operatorPrefix = "ATB:"
 	const timeLayout = "2006-01-02T15:04:05-0700"
 	departures := make([]Departure, 0, len(r.Data.StopPlace.EstimatedCalls))
 	for _, ec := range r.Data.StopPlace.EstimatedCalls {
+		if !strings.HasPrefix(ec.ServiceJourney.Operator.Id, operatorPrefix) {
+			continue // Skip other operators
+		}
 		scheduledDepartureTime, err := time.Parse(timeLayout, ec.ExpectedDepartureTime)
 		if err != nil {
 			return nil, err
