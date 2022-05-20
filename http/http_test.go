@@ -288,7 +288,7 @@ const enturResponse = `{
       "estimatedCalls": [
         {
           "realtime": true,
-          "expectedDepartureTime": "2021-08-11T23:33:09+0200",
+          "expectedDepartureTime": "2021-08-11T23:33:09+02:00",
           "actualDepartureTime": null,
           "destinationDisplay": {
             "frontText": "Risvollan via sentrum"
@@ -307,7 +307,7 @@ const enturResponse = `{
         },
         {
           "realtime": true,
-          "expectedDepartureTime": "2021-08-11T23:38:01+0200",
+          "expectedDepartureTime": "2021-08-11T23:38:01+02:00",
           "actualDepartureTime": null,
           "destinationDisplay": {
             "frontText": "Hallset"

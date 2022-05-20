@@ -10,8 +10,8 @@ import (
 )
 
 // DefaultURL is the default Entur Journey Planner API URL. Documentation at
-// https://developer.entur.org/pages-journeyplanner-journeyplanner-v2.
-const DefaultURL = "https://api.entur.io/journey-planner/v2/graphql"
+// https://developer.entur.org/pages-journeyplanner-journeyplanner-v3.
+const DefaultURL = "https://api.entur.io/journey-planner/v3/graphql"
 
 // Client implements a client for the Entur Journey Planner API.
 type Client struct{ URL string }
@@ -61,7 +61,7 @@ type destinationDisplay struct {
 }
 
 type serviceJourney struct {
-	Operator operator `json:"operator"`
+	Operator       operator       `json:"operator"`
 	JourneyPattern journeyPattern `json:"journeyPattern"`
 }
 
@@ -87,7 +87,7 @@ func (c *Client) Departures(count, stopID int) ([]Departure, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	// Identify this client. See https://developer.entur.org/pages-journeyplanner-journeyplanner-v2
+	// Identify this client. See https://developer.entur.org/pages-journeyplanner-journeyplanner-v3
 	req.Header.Set("ET-Client-Name", "github_mpolden-atb")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -106,8 +106,10 @@ func parseDepartures(jsonData []byte) ([]Departure, error) {
 	if err := json.Unmarshal(jsonData, &r); err != nil {
 		return nil, err
 	}
-	const operatorPrefix = "ATB:"
-	const timeLayout = "2006-01-02T15:04:05-0700"
+	const (
+		operatorPrefix = "ATB:"
+		timeLayout     = "2006-01-02T15:04:05-07:00"
+	)
 	departures := make([]Departure, 0, len(r.Data.StopPlace.EstimatedCalls))
 	for _, ec := range r.Data.StopPlace.EstimatedCalls {
 		if !strings.HasPrefix(ec.ServiceJourney.Operator.Id, operatorPrefix) {

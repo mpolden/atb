@@ -5,8 +5,8 @@
       "name": "Ilsvika",
       "estimatedCalls": [
         {
-          "realtime": false,
-          "expectedDepartureTime": "2021-08-11T21:19:00+0200",
+          "realtime": true,
+          "expectedDepartureTime": "2022-05-20T18:19:00+02:00",
           "actualDepartureTime": null,
           "destinationDisplay": {
             "frontText": "Pirbadet via sentrum"
@@ -25,7 +25,7 @@
         },
         {
           "realtime": true,
-          "expectedDepartureTime": "2021-08-11T22:19:00+0200",
+          "expectedDepartureTime": "2022-05-20T19:19:00+02:00",
           "actualDepartureTime": null,
           "destinationDisplay": {
             "frontText": "Pirbadet via sentrum"
@@ -43,46 +43,8 @@
           }
         },
         {
-          "realtime": false,
-          "expectedDepartureTime": "2021-08-11T23:19:00+0200",
-          "actualDepartureTime": null,
-          "destinationDisplay": {
-            "frontText": "Pirbadet via sentrum"
-          },
-          "serviceJourney": {
-            "operator": {
-              "id": "ATB:Operator:171"
-            },
-            "journeyPattern": {
-              "directionType": "outbound",
-              "line": {
-                "publicCode": "21"
-              }
-            }
-          }
-        },
-        {
-          "realtime": false,
-          "expectedDepartureTime": "2021-08-12T00:19:00+0200",
-          "actualDepartureTime": null,
-          "destinationDisplay": {
-            "frontText": "Pirbadet via sentrum"
-          },
-          "serviceJourney": {
-            "operator": {
-              "id": "ATB:Operator:171"
-            },
-            "journeyPattern": {
-              "directionType": "outbound",
-              "line": {
-                "publicCode": "21"
-              }
-            }
-          }
-        },
-        {
-          "realtime": false,
-          "expectedDepartureTime": "2021-08-12T06:13:00+0200",
+          "realtime": true,
+          "expectedDepartureTime": "2022-05-20T20:19:00+02:00",
           "actualDepartureTime": null,
           "destinationDisplay": {
             "frontText": "Pirbadet via sentrum"
