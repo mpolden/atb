@@ -1,6 +1,6 @@
 # atb
 
-![Build Status](https://github.com/mpolden/atb/workflows/ci/badge.svg)
+[![ci](https://github.com/mpolden/atb/actions/workflows/ci.yml/badge.svg)](https://github.com/mpolden/atb/actions/workflows/ci.yml)
 
 A minimal API for bus data in Trondheim, Norway. This API proxies requests to
 Entur APIs and converts the responses into a sane JSON format.
